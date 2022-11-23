@@ -120,6 +120,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: const Color(0xFF3B5570),
           toolbarHeight: 80,
           actions: [
             Padding(

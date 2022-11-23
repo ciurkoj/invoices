@@ -9,13 +9,14 @@ class InvoiceCardWidget extends StatelessWidget {
   final String vat;
   final String svgPath;
 
-  const InvoiceCardWidget({Key? key,
-  required this.invoiceId,
-  required this.businessPartner,
-  required this.netAmount,
-  required this.grossAmount,
-  required this.vat,
-  required this.svgPath,
+  const InvoiceCardWidget({
+    Key? key,
+    required this.invoiceId,
+    required this.businessPartner,
+    required this.netAmount,
+    required this.grossAmount,
+    required this.vat,
+    required this.svgPath,
   }) : super(key: key);
 
   @override
@@ -35,15 +36,47 @@ class InvoiceCardWidget extends StatelessWidget {
                   height: 40,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Invoice Id:\t\t\t\t $invoiceId", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text("Business Partner:\t\t\t\t$businessPartner", style: const TextStyle(color: Colors.black54, fontSize: 20)),
-                  Text("Net Amount:\t\t\t\t$netAmount", style: const TextStyle(color: Colors.black54, fontSize: 20)),
-                  Text("Gross Amount:\t\t\t\t$grossAmount", style: const TextStyle(color: Colors.black54, fontSize: 20)),
-                  Text("VAT:\t\t\t\t$vat", style: const TextStyle(color: Colors.black54, fontSize: 20)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Invoice Id:", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        Text(invoiceId, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Business Partner:", style: TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text(businessPartner, style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Net Amount:", style: TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text(netAmount, style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Gross Amount:", style: TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text(grossAmount, style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("VAT:", style: TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text(vat, style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
