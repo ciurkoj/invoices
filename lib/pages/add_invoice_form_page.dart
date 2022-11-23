@@ -160,10 +160,10 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                       hintText: 'Invoice Id',
                     ),
                     validator: (value) {
-                      if (!RegExp(r'^[a-zA-Z0-9_\-=@,\.\s]+$').hasMatch(value!)) {
+                      if (!RegExp(r'^[a-zA-Z0-9_\-=@,.\s]+$').hasMatch(value!)) {
                         return 'Please enter invoice id';
                       } else if (double.tryParse(value) != null) {
-                        return 'Value must not be a nuber';
+                        return 'Value must not be a number';
                       }
                       return null;
                     },
@@ -178,10 +178,10 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                       hintText: 'Business Partner',
                     ),
                     validator: (value) {
-                      if (!RegExp(r'^[a-zA-Z0-9_\-=@,\.\s]+$').hasMatch(value!) || value.isEmpty) {
+                      if (!RegExp(r'^[a-zA-Z0-9_\-=@,.\s]+$').hasMatch(value!) || value.isEmpty) {
                         return 'Please enter a business partner';
                       } else if (double.tryParse(value) != null) {
-                        return 'Value must not be a nuber';
+                        return 'Value must not be a number';
                       }
                       return null;
                     },
@@ -205,7 +205,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                               contentPadding: EdgeInsets.symmetric(vertical: 24.0, horizontal: 8),
                             ),
                             validator: (value) {
-                              if (!RegExp(r'^[a-zA-Z0-9_\-=@,\.]+$').hasMatch(value!)) {
+                              if (!RegExp(r'^[0-9.]+$').hasMatch(value!)) {
                                 return 'Please enter net amount';
                               } else if (value == "0") {
                                 return 'Net amount must be greater than 0';

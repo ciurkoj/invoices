@@ -25,6 +25,7 @@ class Invoice {
   final String? invoiceId;
   final String businessPartner;
   final double? netAmount;
+  @JsonKey(name: 'VAT')
   final int? vat;
   final String grossAmount;
 

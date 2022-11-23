@@ -135,7 +135,7 @@ class InvoicesPageState extends State<InvoicesPage> {
                         Text("Business Partner:\t\t\t\t${invoices[index].businessPartner}", style: const TextStyle(color: Colors.black54, fontSize: 20)),
                         Text("Net Amount:\t\t\t\t${invoices[index].netAmount.toString()}", style: const TextStyle(color: Colors.black54, fontSize: 20)),
                         Text("Gross Amount:\t\t\t\t${invoices[index].grossAmount}", style: const TextStyle(color: Colors.black54, fontSize: 20)),
-                        Text("VAT:\t\t\t\t${invoices[index].vat.toString()}", style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text("VAT:\t\t\t\t${invoices[index].vat.toString()}%", style: const TextStyle(color: Colors.black54, fontSize: 20)),
                       ],
                     ),
                   ],
