@@ -51,7 +51,13 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     vat = widget.invoice?.vat ?? 0;
     if (widget.invoice != null) {
       file = File(widget.invoice!.filePath);
-      _paths?.add(PlatformFile(name: basename(file!.path), size: file!.lengthSync(), path: widget.invoice!.filePath));
+      int size = 0;
+      try {
+        size= file!.lengthSync();
+      } on FileSystemException {
+        print("Exception Occurs");
+      }
+      _paths?.add(PlatformFile(name: basename(file!.path), size: size , path: widget.invoice!.filePath));
       invoice = Invoice(
           id: widget.invoice!.id,
           invoiceId: widget.invoice!.invoiceId,
