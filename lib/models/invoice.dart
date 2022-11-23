@@ -9,7 +9,7 @@ class Invoice {
   final String? invoiceId;
   final String businessPartner;
   final double? netAmount;
-  final int VAT;
+  final int vat;
   final String grossAmount;
 
   // final File attachment;
@@ -19,7 +19,7 @@ class Invoice {
     this.invoiceId,
     required this.businessPartner,
     required this.netAmount,
-    required this.VAT,
+    required this.vat,
     required this.grossAmount,
     // this.attachment,
   });
@@ -29,7 +29,7 @@ class Invoice {
     String? invoiceId,
     String? businessPartner,
     double? netAmount,
-    int? VAT,
+    int? vat,
     String? grossAmount,
   }) =>
       Invoice(
@@ -37,7 +37,7 @@ class Invoice {
         invoiceId: invoiceId ?? this.invoiceId,
         businessPartner: businessPartner ?? this.businessPartner,
         netAmount: netAmount ?? this.netAmount,
-        VAT: VAT ?? this.VAT,
+        vat: vat ?? this.vat,
         grossAmount: grossAmount ?? this.grossAmount,
       );
 

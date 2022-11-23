@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:invoices/pages/invoices_page.dart';
 
 Future main() async {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   static const String title = 'Invoices';
+
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -16,6 +18,6 @@ class MyApp extends StatelessWidget {
     theme: ThemeData(
       appBarTheme: const AppBarTheme(),
     ),
-    home: InvoicesPage(),
+    home: const InvoicesPage(),
   );
 }

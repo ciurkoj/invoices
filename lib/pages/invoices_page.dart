@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:invoices/models/invoice.dart';
+import 'package:invoices/pages/add_invoice_form_page.dart';
 
 class InvoicesPage extends StatefulWidget {
+  const InvoicesPage({super.key});
+
   @override
-  _InvoicesPageState createState() => _InvoicesPageState();
+  InvoicesPageState createState() => InvoicesPageState();
 }
 
-class _InvoicesPageState extends State<InvoicesPage> {
+class InvoicesPageState extends State<InvoicesPage> {
   List<Invoice> invoices = [];
   bool isLoading = false;
 
@@ -48,7 +51,11 @@ class _InvoicesPageState extends State<InvoicesPage> {
         ),
         floatingActionButton: FloatingActionButton(
           child: const Icon(Icons.add),
-          onPressed: () {},
+          onPressed: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const AddInvoiceFormPage()),
+            );
+          },
         ),
       );
 
@@ -63,7 +70,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
               Text("Business Partner:\t\t\t\t${invoices[index].businessPartner}", style: const TextStyle(color: Colors.white70, fontSize: 20)),
               Text("Net Amount:\t\t\t\t${invoices[index].netAmount.toString()}", style: const TextStyle(color: Colors.white70, fontSize: 20)),
               Text("Gross Amount:\t\t\t\t${invoices[index].grossAmount}", style: const TextStyle(color: Colors.white70, fontSize: 20)),
-              Text("VAT:\t\t\t\t${invoices[index].VAT.toString()}", style: const TextStyle(color: Colors.white70, fontSize: 20)),
+              Text("VAT:\t\t\t\t${invoices[index].vat.toString()}", style: const TextStyle(color: Colors.white70, fontSize: 20)),
             ],
           );
         },

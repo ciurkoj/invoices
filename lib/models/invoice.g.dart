@@ -11,7 +11,7 @@ Invoice _$InvoiceFromJson(Map<String, dynamic> json) => Invoice(
       invoiceId: json['invoiceId'] as String?,
       businessPartner: json['businessPartner'] as String,
       netAmount: (json['netAmount'] as num?)?.toDouble(),
-      VAT: json['VAT'] as int,
+      vat: json['VAT'] as int,
       grossAmount: json['grossAmount'] as String,
     );
 
@@ -20,6 +20,6 @@ Map<String, dynamic> _$InvoiceToJson(Invoice instance) => <String, dynamic>{
       'invoiceId': instance.invoiceId,
       'businessPartner': instance.businessPartner,
       'netAmount': instance.netAmount,
-      'VAT': instance.VAT,
+      'VAT': instance.vat,
       'grossAmount': instance.grossAmount,
     };
