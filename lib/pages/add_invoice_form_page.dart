@@ -328,12 +328,6 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                       )
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    buildSaveButton(),
-                  ],
-                ),
               ],
             ),
           ),

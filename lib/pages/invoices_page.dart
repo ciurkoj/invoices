@@ -63,6 +63,7 @@ class InvoicesPageState extends State<InvoicesPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          backgroundColor: const Color(0xFF3B5570),
           title: const Text(
             'Invoices',
             style: TextStyle(fontSize: 24),
@@ -99,7 +100,7 @@ class InvoicesPageState extends State<InvoicesPage> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.black,
+          backgroundColor: const Color(0xFF3B5570),
           child: const Icon(Icons.add),
           onPressed: () async {
             await Navigator.of(context).push(
