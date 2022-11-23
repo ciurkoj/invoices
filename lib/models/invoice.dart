@@ -2,17 +2,31 @@ import 'package:json_annotation/json_annotation.dart';
 
 part "invoice.g.dart";
 
+const String tableInvoice = 'invoices';
+
+class InvoiceFields {
+  static final List<String> values = [
+    /// Add all fields
+    id, invoiceId, businessPartner, netAmount, vat, grossAmount
+  ];
+
+  static const String id = '_id';
+  static const String invoiceId = 'invoiceId';
+  static const String businessPartner = 'businessPartner';
+  static const String netAmount = 'netAmount';
+  static const String vat = 'VAT';
+  static const String grossAmount = 'grossAmount';
+}
 
 @JsonSerializable()
 class Invoice {
+  @JsonKey(name: '_id')
   final int? id;
   final String? invoiceId;
   final String businessPartner;
   final double? netAmount;
-  final int vat;
+  final int? vat;
   final String grossAmount;
-
-  // final File attachment;
 
   Invoice({
     this.id,
@@ -21,7 +35,6 @@ class Invoice {
     required this.netAmount,
     required this.vat,
     required this.grossAmount,
-    // this.attachment,
   });
 
   Invoice copy({

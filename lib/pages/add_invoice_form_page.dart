@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:invoices/db/invoice_database.dart';
+import 'package:invoices/models/invoice.dart';
 
 class AddInvoiceFormPage extends StatefulWidget {
   final String? invoiceId;
@@ -40,9 +42,14 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   AutovalidateMode mode = AutovalidateMode.onUserInteraction;
   File? file;
 
+  bool isLoading = false;
+  late List<Invoice> invoices;
+  Invoice? invoice;
+
   @override
   void initState() {
     super.initState();
+    refreshInvoice();
   }
 
   @override
@@ -57,6 +64,14 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     setState(() {
       _paths = null;
     });
+  }
+
+  Future refreshInvoice() async {
+    setState(() => isLoading = true);
+
+    invoices = await InvoiceDatabase.instance.readAllInvoices();
+
+    setState(() => isLoading = false);
   }
 
   void _logException(String message) {
@@ -312,6 +327,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
               const SnackBar(content: Text('Processing Data')),
             );
             setState(() {
+              addOrUpdateInvoice();
               vat = 0;
               _paths = null;
               _formKey.currentState!.reset();
@@ -330,5 +346,39 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
         child: const Text('Save'),
       ),
     );
+  }
+
+  void addOrUpdateInvoice() async {
+    final isValid = _formKey.currentState!.validate();
+
+    if (isValid) {
+      final isUpdating = invoice != null;
+
+      if (isUpdating) {
+        await updateInvoice();
+      } else {
+        await addInvoice();
+      }
+    }
+  }
+
+  Future updateInvoice() async {
+    await InvoiceDatabase.instance.update(invoice!.copy(
+      invoiceId: _invoiceIdController.text,
+      businessPartner: _businessPartnerController.text,
+      vat: vat,
+      netAmount: double.parse(_netAmountController1.text),
+      grossAmount: _grossAmountController.text,
+    ));
+  }
+
+  Future addInvoice() async {
+    await InvoiceDatabase.instance.create(Invoice(
+      invoiceId: _invoiceIdController.text,
+      businessPartner: _businessPartnerController.text,
+      vat: vat,
+      netAmount: double.parse(_netAmountController1.text),
+      grossAmount: _grossAmountController.text,
+    ));
   }
 }
