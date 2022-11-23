@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class InvoiceCardWidget extends StatelessWidget {
-  String invoiceId;
-  String businessPartner;
-  String netAmount;
-  String grossAmount;
-  String vat;
-  String svgPath;
+  final String invoiceId;
+  final String businessPartner;
+  final String netAmount;
+  final String grossAmount;
+  final String vat;
+  final String svgPath;
 
-  InvoiceCardWidget({Key? key,
+  const InvoiceCardWidget({Key? key,
   required this.invoiceId,
   required this.businessPartner,
   required this.netAmount,
@@ -49,6 +49,6 @@ class InvoiceCardWidget extends StatelessWidget {
           ),
         ),
       ),
-    );;
+    );
   }
 }

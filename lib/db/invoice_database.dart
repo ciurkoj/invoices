@@ -36,7 +36,8 @@ class InvoiceDatabase {
     ${InvoiceFields.businessPartner} $textType,  
     ${InvoiceFields.netAmount} $doubleType,  
     ${InvoiceFields.grossAmount} $textType,  
-    ${InvoiceFields.vat} $integerType
+    ${InvoiceFields.vat} $integerType,
+    ${InvoiceFields.filePath} $textType
     )
     ''');
   }
@@ -54,7 +55,7 @@ class InvoiceDatabase {
     final maps = await db.query(
       tableInvoice,
       columns: InvoiceFields.values,
-      where: '${InvoiceFields.invoiceId} = ?',
+      where: '${InvoiceFields.id} = ?',
       whereArgs: [id],
     );
 
@@ -79,8 +80,8 @@ class InvoiceDatabase {
     return db.update(
       tableInvoice,
       invoice.toJson(),
-      where: '${InvoiceFields.invoiceId} = ?',
-      whereArgs: [invoice.invoiceId],
+      where: '${InvoiceFields.id} = ?',
+      whereArgs: [invoice.id],
     );
   }
 
@@ -89,7 +90,7 @@ class InvoiceDatabase {
 
     return await db.delete(
       tableInvoice,
-      where: '${InvoiceFields.invoiceId} = ?',
+      where: '${InvoiceFields.id} = ?',
       whereArgs: [id],
     );
   }

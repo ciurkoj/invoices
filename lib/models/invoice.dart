@@ -7,7 +7,7 @@ const String tableInvoice = 'invoices';
 class InvoiceFields {
   static final List<String> values = [
     /// Add all fields
-    id, invoiceId, businessPartner, netAmount, vat, grossAmount
+    id, invoiceId, businessPartner, netAmount, vat, grossAmount ,filePath
   ];
 
   static const String id = '_id';
@@ -16,26 +16,29 @@ class InvoiceFields {
   static const String netAmount = 'netAmount';
   static const String vat = 'VAT';
   static const String grossAmount = 'grossAmount';
+  static const String filePath = 'filePath';
 }
 
 @JsonSerializable()
 class Invoice {
   @JsonKey(name: '_id')
   final int? id;
-  final String? invoiceId;
+  final String invoiceId;
   final String businessPartner;
-  final double? netAmount;
+  final double netAmount;
   @JsonKey(name: 'VAT')
-  final int? vat;
+  final int vat;
   final String grossAmount;
+  final String filePath;
 
   Invoice({
     this.id,
-    this.invoiceId,
+    required this.invoiceId,
     required this.businessPartner,
     required this.netAmount,
     required this.vat,
     required this.grossAmount,
+    required this.filePath,
   });
 
   Invoice copy({
@@ -45,6 +48,7 @@ class Invoice {
     double? netAmount,
     int? vat,
     String? grossAmount,
+    String? filePath,
   }) =>
       Invoice(
         id: id ?? this.id,
@@ -53,6 +57,7 @@ class Invoice {
         netAmount: netAmount ?? this.netAmount,
         vat: vat ?? this.vat,
         grossAmount: grossAmount ?? this.grossAmount,
+        filePath: filePath ?? this.filePath,
       );
 
   factory Invoice.fromJson(Map<String, dynamic> json) => _$InvoiceFromJson(json);

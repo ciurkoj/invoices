@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:invoices/pages/add_invoice_form_page.dart';
+import 'package:invoices/pages/invoice_detail_page.dart';
 import 'package:invoices/widgets/invoice_card_widget.dart';
 
 class InvoicesPage extends StatefulWidget {
@@ -18,6 +20,8 @@ class InvoicesPageState extends State<InvoicesPage> {
   bool isLoading = false;
 
   TextEditingController editingController = TextEditingController();
+
+
 
   @override
   void initState() {
@@ -44,7 +48,7 @@ class InvoicesPageState extends State<InvoicesPage> {
     if (query.isNotEmpty) {
       List<Invoice> dummyListData = <Invoice>[];
       dummySearchList.forEach((item) {
-        if (item.invoiceId!.contains(query)) {
+        if (item.invoiceId.contains(query)) {
           dummyListData.add(item);
         }
       });
@@ -111,17 +115,27 @@ class InvoicesPageState extends State<InvoicesPage> {
           },
         ),
       );
-
+  FutureOr onGoBack(dynamic value) {
+    refreshInvoices();
+    setState(() {});
+  }
   Widget buildInvoices() => ListView.builder(
         itemCount: invoices.length,
         itemBuilder: (BuildContext context, int index) {
-          return InvoiceCardWidget(
-              invoiceId: invoices[index].invoiceId!,
-              businessPartner: invoices[index].businessPartner,
-              netAmount: invoices[index].netAmount.toString(),
-              grossAmount: invoices[index].grossAmount,
-              vat: invoices[index].vat.toString(),
-              svgPath: "assets/pdf-svgrepo-com.svg");
+          return OutlinedButton(
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => InvoiceDetailPage(invoice: invoices[index])),
+              ).then(onGoBack);
+            },
+            child: InvoiceCardWidget(
+                invoiceId: invoices[index].invoiceId,
+                businessPartner: invoices[index].businessPartner,
+                netAmount: invoices[index].netAmount.toString(),
+                grossAmount: invoices[index].grossAmount,
+                vat: invoices[index].vat.toString(),
+                svgPath: "assets/pdf-svgrepo-com.svg"),
+          );
         },
       );
 }

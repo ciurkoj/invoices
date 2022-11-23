@@ -1,26 +1,20 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:path/path.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 
 class AddInvoiceFormPage extends StatefulWidget {
-  final String? invoiceId;
-  final int? vat;
-  final String? businessPartner;
-  final double? netAmount;
-  final String? grossAmount;
+  final Invoice? invoice;
 
   const AddInvoiceFormPage({
     Key? key,
-    this.invoiceId,
-    this.vat,
-    this.businessPartner,
-    this.netAmount,
-    this.grossAmount,
+    this.invoice,
   }) : super(key: key);
 
   @override
@@ -33,11 +27,11 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-  List<PlatformFile>? _paths;
-  final TextEditingController _grossAmountController = TextEditingController();
-  final TextEditingController _netAmountController1 = TextEditingController();
-  final TextEditingController _businessPartnerController = TextEditingController();
-  final TextEditingController _invoiceIdController = TextEditingController();
+  List<PlatformFile>? _paths = [];
+  late final TextEditingController _grossAmountController;
+  late final TextEditingController _netAmountController1;
+  late final TextEditingController _businessPartnerController;
+  late final TextEditingController _invoiceIdController;
   int vat = 0;
   AutovalidateMode mode = AutovalidateMode.onUserInteraction;
   File? file;
@@ -45,13 +39,28 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   Color color = Colors.grey;
 
   bool isLoading = false;
-  late List<Invoice> invoices;
   Invoice? invoice;
 
   @override
   void initState() {
     super.initState();
-    refreshInvoice();
+    _grossAmountController = TextEditingController(text: widget.invoice?.grossAmount);
+    _netAmountController1 = TextEditingController(text: widget.invoice?.netAmount != null ? widget.invoice?.netAmount.toString() : "");
+    _businessPartnerController = TextEditingController(text: widget.invoice?.businessPartner);
+    _invoiceIdController = TextEditingController(text: widget.invoice?.invoiceId);
+    vat = widget.invoice?.vat ?? 0;
+    if (widget.invoice != null) {
+      file = File(widget.invoice!.filePath);
+      _paths?.add(PlatformFile(name: basename(file!.path), size: file!.lengthSync(), path: widget.invoice!.filePath));
+      invoice = Invoice(
+          id: widget.invoice!.id,
+          invoiceId: widget.invoice!.invoiceId,
+          businessPartner: widget.invoice!.businessPartner,
+          netAmount: widget.invoice!.netAmount,
+          vat: widget.invoice!.vat,
+          grossAmount: widget.invoice!.grossAmount,
+          filePath: widget.invoice!.filePath);
+    }
   }
 
   @override
@@ -66,14 +75,6 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     setState(() {
       _paths = null;
     });
-  }
-
-  Future refreshInvoice() async {
-    setState(() => isLoading = true);
-
-    invoices = await InvoiceDatabase.instance.readAllInvoices();
-
-    setState(() => isLoading = false);
   }
 
   void _logException(String message) {
@@ -116,11 +117,6 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
@@ -128,7 +124,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: buildSaveButton(),
+              child: buildSaveButton(context),
             )
           ],
         ),
@@ -153,7 +149,6 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
-                    initialValue: widget.invoiceId,
                     controller: _invoiceIdController,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
@@ -194,7 +189,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: SizedBox(
-                          width: 300,
+                          width: MediaQuery.of(context).size.width * 0.6,
                           child: TextFormField(
                             controller: _netAmountController1,
                             keyboardType: TextInputType.number,
@@ -225,7 +220,8 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: DropdownButtonFormField(
+                          child: DropdownButtonFormField<int>(
+                            value: vat,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               hintText: 'Select VAT',
@@ -302,14 +298,22 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                             ],
                           ),
                         ),
-                        _paths != null
+                        _paths?.isNotEmpty == true
                             ? Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text(
-                                  _paths!.first.name,
-                                  style: const TextStyle(overflow: TextOverflow.ellipsis),
-                                  softWrap: true,
-                                  maxLines: 2,
+                                child: Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      "assets/pdf-svgrepo-com.svg",
+                                      height: 40,
+                                    ),
+                                    Text(
+                                      _paths!.first.name,
+                                      style: const TextStyle(overflow: TextOverflow.ellipsis),
+                                      softWrap: true,
+                                      maxLines: 2,
+                                    ),
+                                  ],
                                 ))
                             : Container(),
                       ],
@@ -334,7 +338,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
         ));
   }
 
-  Widget buildSaveButton() {
+  Widget buildSaveButton(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: ElevatedButton(
@@ -349,7 +353,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                 const SnackBar(content: Text('Processing Data')),
               );
               setState(() {
-                addOrUpdateInvoice();
+                addOrUpdateInvoice(context);
                 vat = 0;
                 _paths = null;
                 _formKey.currentState!.reset();
@@ -379,7 +383,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     );
   }
 
-  void addOrUpdateInvoice() async {
+  void addOrUpdateInvoice(BuildContext context) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -411,13 +415,16 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   }
 
   Future updateInvoice() async {
-    await InvoiceDatabase.instance.update(invoice!.copy(
+    final minvoice = invoice!.copy(
+      id: invoice!.id,
       invoiceId: _invoiceIdController.text,
       businessPartner: _businessPartnerController.text,
       vat: vat,
       netAmount: double.parse(_netAmountController1.text),
       grossAmount: _grossAmountController.text,
-    ));
+      filePath: file!.path,
+    );
+    await InvoiceDatabase.instance.update(minvoice);
   }
 
   Future addInvoice() async {
@@ -427,6 +434,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
       vat: vat,
       netAmount: double.parse(_netAmountController1.text),
       grossAmount: _grossAmountController.text,
+      filePath: file!.path,
     ));
   }
 }
