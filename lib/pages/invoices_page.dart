@@ -13,6 +13,7 @@ class InvoicesPage extends StatefulWidget {
 
 class InvoicesPageState extends State<InvoicesPage> {
   List<Invoice> invoices = [];
+  List<Invoice> invoices1 = [];
   bool isLoading = false;
 
   TextEditingController editingController = TextEditingController();
@@ -32,7 +33,31 @@ class InvoicesPageState extends State<InvoicesPage> {
   Future refreshInvoices() async {
     setState(() => isLoading = true);
     invoices = await InvoiceDatabase.instance.readAllInvoices();
+    invoices1 = await InvoiceDatabase.instance.readAllInvoices();
     setState(() => isLoading = false);
+  }
+
+  void filterSearchResults(String query) {
+    List<Invoice> dummySearchList = <Invoice>[];
+    dummySearchList.addAll(invoices);
+    if (query.isNotEmpty) {
+      List<Invoice> dummyListData = <Invoice>[];
+      dummySearchList.forEach((item) {
+        if (item.invoiceId!.contains(query)) {
+          dummyListData.add(item);
+        }
+      });
+      setState(() {
+        invoices.clear();
+        invoices.addAll(dummyListData);
+      });
+      return;
+    } else {
+      setState(() {
+        invoices.clear();
+        invoices.addAll(invoices1);
+      });
+    }
   }
 
   @override
@@ -45,6 +70,20 @@ class InvoicesPageState extends State<InvoicesPage> {
         ),
         body: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                onChanged: (value) {
+                  filterSearchResults(value);
+                },
+                controller: editingController,
+                decoration: const InputDecoration(
+                    labelText: "Search",
+                    hintText: "Search",
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(25.0)))),
+              ),
+            ),
             Expanded(
               child: Center(
                 child: isLoading
