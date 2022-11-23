@@ -42,6 +42,8 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   AutovalidateMode mode = AutovalidateMode.onUserInteraction;
   File? file;
 
+  Color color = Colors.grey;
+
   bool isLoading = false;
   late List<Invoice> invoices;
   Invoice? invoice;
@@ -114,12 +116,36 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          toolbarHeight: 80,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: buildSaveButton(),
+            )
+          ],
+        ),
         body: Form(
           key: _formKey,
           autovalidateMode: mode,
+          onChanged: () {
+            if (_formKey.currentState?.validate() == true) {
+              setState(() {
+                color = Colors.greenAccent;
+              });
+            } else {
+              setState(() {
+                color = Colors.grey;
+              });
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8),
             child: ListView(
@@ -319,36 +345,64 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: ElevatedButton(
         style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.all<Color>(color),
           minimumSize: MaterialStateProperty.all<Size>(const Size(100, 50)),
         ),
         onPressed: () async {
-          if (_formKey.currentState!.validate() && _paths != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Processing Data')),
-            );
-            setState(() {
-              addOrUpdateInvoice();
-              vat = 0;
-              _paths = null;
-              _formKey.currentState!.reset();
-              _netAmountController1.text = '';
-              _grossAmountController.text = '';
-              _businessPartnerController.text = '';
-              _invoiceIdController.text = '';
-              mode = AutovalidateMode.disabled;
-            });
-          } else {
-            setState(() {
-              mode = AutovalidateMode.always;
-            });
+          if (color != Colors.grey) {
+            if (_formKey.currentState!.validate() && _paths != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Processing Data')),
+              );
+              setState(() {
+                addOrUpdateInvoice();
+                vat = 0;
+                _paths = null;
+                _formKey.currentState!.reset();
+                _netAmountController1.text = '';
+                _grossAmountController.text = '';
+                _businessPartnerController.text = '';
+                _invoiceIdController.text = '';
+                mode = AutovalidateMode.disabled;
+              });
+            } else {
+              setState(() {
+                mode = AutovalidateMode.always;
+              });
+            }
           }
         },
-        child: const Text('Save'),
+        child: Row(
+          children: const [
+            Icon(Icons.save),
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void addOrUpdateInvoice() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Your invoice has been saved"),
+          actions: [
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
     final isValid = _formKey.currentState!.validate();
 
     if (isValid) {
