@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:invoices/models/invoice.dart';
 
 class InvoiceCardWidget extends StatelessWidget {
   final String invoiceId;
@@ -8,6 +9,7 @@ class InvoiceCardWidget extends StatelessWidget {
   final String grossAmount;
   final String vat;
   final String svgPath;
+  final String? highlighted;
 
   const InvoiceCardWidget({
     Key? key,
@@ -17,6 +19,7 @@ class InvoiceCardWidget extends StatelessWidget {
     required this.grossAmount,
     required this.vat,
     required this.svgPath,
+    this.highlighted,
   }) : super(key: key);
 
   @override
@@ -43,15 +46,20 @@ class InvoiceCardWidget extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Invoice Id:", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                        Text(invoiceId, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        Text("Invoice Id:", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[800])),
+                        Text(invoiceId,
+                            style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: highlighted == InvoiceFields.invoiceId ? Colors.blueAccent : Colors.grey[800])),
                       ],
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text("Business Partner:", style: TextStyle(color: Colors.black54, fontSize: 20)),
-                        Text(businessPartner, style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text(businessPartner,
+                            style: TextStyle(fontSize: 20, color: highlighted == InvoiceFields.businessPartner ? Colors.blueAccent : Colors.black54)),
                       ],
                     ),
                     Row(
@@ -65,7 +73,7 @@ class InvoiceCardWidget extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text("Gross Amount:", style: TextStyle(color: Colors.black54, fontSize: 20)),
-                        Text(grossAmount, style: const TextStyle(color: Colors.black54, fontSize: 20)),
+                        Text(grossAmount, style: TextStyle(color: highlighted == InvoiceFields.grossAmount ? Colors.blueAccent : Colors.black54, fontSize: 20)),
                       ],
                     ),
                     Row(
