@@ -144,82 +144,86 @@ class InvoicesPageState extends State<InvoicesPage> {
         },
       );
 
-  Widget buildSearchBar() => Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black12),
-            borderRadius: const BorderRadius.all(Radius.circular(25.0)),
-          ),
-          child: Flex(
-            direction: Axis.horizontal,
-            children: [
-              Flexible(
-                flex: 2,
-                child: TextField(
-                  onTapOutside: (PointerDownEvent? event) {
-                    FocusScope.of(context).unfocus();
-                  },
-                  onChanged: (value) {
-                    filterSearchResults(value);
-                  },
-                  controller: editingController,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(24),
-                      ),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).primaryColor,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    labelText: "Search",
-                    hintText: "Search",
-                    prefixIcon: const Icon(Icons.search),
-                    // border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(25.0)))
-                  ),
-                ),
-              ),
-              Flexible(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButtonFormField<String>(
-                    value: searchByValue,
-                    alignment: AlignmentDirectional.topCenter,
-                    decoration: const InputDecoration.collapsed(
-                      //   border: OutlineInputBorder(),
-                      hintText: 'Search by',
-                    ),
-                    items: const [
-                      DropdownMenuItem<String>(
-                        value: "any",
-                        child: Text("Any"),
-                      ),
-                      DropdownMenuItem<String>(
-                        value: InvoiceFields.invoiceId,
-                        child: Text("Invoice Id"),
-                      ),
-                      DropdownMenuItem<String>(
-                        value: InvoiceFields.businessPartner,
-                        child: Text("Business Partner"),
-                      ),
-                      DropdownMenuItem<String>(
-                        value: InvoiceFields.grossAmount,
-                        child: Text("Gross Amount"),
-                      )
-                    ],
-                    onChanged: (String? value) {
-                      if (value != null) {
-                        setState(() {
-                          searchByValue = value;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
+  Widget buildSearchBar() {
+    TextStyle style = TextStyle(overflow: TextOverflow.ellipsis);
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black12),
+          borderRadius: const BorderRadius.all(Radius.circular(25.0)),
         ),
-      );
+        child: Flex(
+          direction: Axis.horizontal,
+          children: [
+            Flexible(
+              flex: 2,
+              child: TextField(
+                onTapOutside: (PointerDownEvent? event) {
+                  FocusScope.of(context).unfocus();
+                },
+                onChanged: (value) {
+                  filterSearchResults(value);
+                },
+                controller: editingController,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                    ),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      style: BorderStyle.solid,
+                    ),
+                  ),
+                  labelText: "Search",
+                  hintText: "Search",
+                  prefixIcon: const Icon(Icons.search),
+                  // border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(25.0)))
+                ),
+              ),
+            ),
+            Flexible(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: searchByValue,
+                  alignment: AlignmentDirectional.topCenter,
+                  decoration: const InputDecoration.collapsed(
+                    //   border: OutlineInputBorder(),
+                    hintText: 'Search by',
+                  ),
+                  items: [
+                    DropdownMenuItem<String>(
+                      value: "any",
+                      child: Text("Any".replaceAll("", "\u{200B}"), style: style),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: InvoiceFields.invoiceId,
+                      child: Text("Invoice Id".replaceAll("", "\u{200B}"), style: style),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: InvoiceFields.businessPartner,
+                      child: Text("Business Partner".replaceAll("", "\u{200B}"), style: style),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: InvoiceFields.grossAmount,
+                      child: Text("Gross Amount".replaceAll("", "\u{200B}"), style: style),
+                    )
+                  ],
+                  onChanged: (String? value) {
+                    if (value != null) {
+                      setState(() {
+                        searchByValue = value;
+                      });
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -53,11 +53,11 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
       file = File(widget.invoice!.filePath);
       int size = 0;
       try {
-        size= file!.lengthSync();
+        size = file!.lengthSync();
       } on FileSystemException {
         print("Exception Occurs");
       }
-      _paths?.add(PlatformFile(name: basename(file!.path), size: size , path: widget.invoice!.filePath));
+      _paths?.add(PlatformFile(name: basename(file!.path), size: size, path: widget.invoice!.filePath));
       invoice = Invoice(
           id: widget.invoice!.id,
           invoiceId: widget.invoice!.invoiceId,
@@ -190,13 +190,14 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                   ),
                 ),
                 IntrinsicHeight(
-                  child: Row(
+                  child: Flex(
+                    direction: Axis.horizontal,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.6,
+                      Flexible(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
                           child: TextFormField(
                             controller: _netAmountController1,
                             keyboardType: TextInputType.number,
@@ -224,10 +225,12 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                           ),
                         ),
                       ),
-                      Expanded(
+                      Flexible(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: DropdownButtonFormField<int>(
+                            alignment: AlignmentDirectional.topStart,
+                            isExpanded: true,
                             value: vat,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
@@ -286,42 +289,51 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                 ),
                 Column(
                   children: [
-                    Row(
+                    Flex(
+                      direction: Axis.horizontal,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Row(
+                        Flexible(
+                          child: Flex(
+                            direction: Axis.horizontal,
                             children: [
-                              IconButton(
-                                iconSize: 40,
-                                onPressed: () => _pickFiles(),
-                                icon: const Icon(
-                                  Icons.add_box_outlined,
+                              Flexible(
+                                child: IconButton(
+                                  iconSize: 40,
+                                  onPressed: () => _pickFiles(),
+                                  icon: const Icon(
+                                    Icons.add_box_outlined,
+                                  ),
+                                  // child: Text(_multiPick ? 'Pick files' : 'Pick file'),
                                 ),
-                                // child: Text(_multiPick ? 'Pick files' : 'Pick file'),
                               ),
-                              const Text("Attach an invoice")
+                              Flexible(
+                                  flex: 2, child: Text("Attach an invoice".replaceAll("", "\u{200B}"), style: const TextStyle(overflow: TextOverflow.ellipsis)))
                             ],
                           ),
                         ),
                         _paths?.isNotEmpty == true
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Row(
+                            ? Flexible(
+                                child: Container(
+                                    child: Flex(
+                                  direction: Axis.horizontal,
                                   children: [
-                                    SvgPicture.asset(
-                                      "assets/pdf-svgrepo-com.svg",
-                                      height: 40,
+                                    Flexible(
+                                      child: SvgPicture.asset(
+                                        "assets/pdf-svgrepo-com.svg",
+                                        height: 40,
+                                      ),
                                     ),
-                                    Text(
-                                      _paths!.first.name,
-                                      style: const TextStyle(overflow: TextOverflow.ellipsis),
-                                      softWrap: true,
-                                      maxLines: 2,
+                                    Flexible(
+                                      flex: 3,
+                                      child: Text(
+                                        _paths!.first.name.replaceAll("", "\u{200B}"),
+                                        style: const TextStyle(overflow: TextOverflow.ellipsis),
+                                      ),
                                     ),
                                   ],
-                                ))
+                                )),
+                              )
                             : Container(),
                       ],
                     ),
