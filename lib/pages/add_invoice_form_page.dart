@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:invoices/widgets/pdf_view_widget.dart';
 import 'package:path/path.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
+import 'package:pdfx/pdfx.dart';
 
 class AddInvoiceFormPage extends StatefulWidget {
   final Invoice? invoice;
@@ -32,14 +34,13 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   late final TextEditingController _netAmountController1;
   late final TextEditingController _businessPartnerController;
   late final TextEditingController _invoiceIdController;
+  PdfController? pdfController;
   int vat = 0;
   AutovalidateMode mode = AutovalidateMode.onUserInteraction;
   File? file;
-
   Color color = Colors.grey;
-
-  bool isLoading = false;
   Invoice? invoice;
+
 
   @override
   void initState() {
@@ -96,6 +97,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     _resetState();
     try {
       _paths = (await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']))?.files;
+      pdfController = PdfController(document: PdfDocument.openFile(_paths!.first.path!));
     } on PlatformException catch (e) {
       _logException('Unsupported operation$e');
     } catch (e) {
@@ -107,14 +109,6 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     });
   }
 
-  Future<File?> pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-    if (result == null) return null;
-    return File(result.paths.first ?? '');
-  }
 
   String calculateVAT(String value) {
     double x = double.parse(value);
@@ -126,7 +120,6 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF3B5570),
           toolbarHeight: 80,
           actions: [
             Padding(
@@ -152,207 +145,221 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8),
             child: ListView(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextFormField(
-                    controller: _invoiceIdController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Invoice Id',
-                    ),
-                    validator: (value) {
-                      if (!RegExp(r'^[a-zA-Z0-9_\-=@,.\s]+$').hasMatch(value!)) {
-                        return 'Please enter invoice id';
-                      } else if (double.tryParse(value) != null) {
-                        return 'Value must not be a number';
-                      }
-                      return null;
-                    },
+                children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextFormField(
+                  controller: _invoiceIdController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Invoice Id',
                   ),
+                  validator: (value) {
+                    if (!RegExp(r'^[a-zA-Z0-9_\-=@,.\s]+$').hasMatch(value!)) {
+                      return 'Please enter invoice id';
+                    } else if (double.tryParse(value) != null) {
+                      return 'Value must not be a number';
+                    }
+                    return null;
+                  },
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextFormField(
-                    controller: _businessPartnerController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Business Partner',
-                    ),
-                    validator: (value) {
-                      if (!RegExp(r'^[a-zA-Z0-9_\-=@,.\s]+$').hasMatch(value!) || value.isEmpty) {
-                        return 'Please enter a business partner';
-                      } else if (double.tryParse(value) != null) {
-                        return 'Value must not be a number';
-                      }
-                      return null;
-                    },
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextFormField(
+                  controller: _businessPartnerController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Business Partner',
                   ),
+                  validator: (value) {
+                    if (!RegExp(r'^[a-zA-Z0-9_\-=@,.\s]+$').hasMatch(value!) || value.isEmpty) {
+                      return 'Please enter a business partner';
+                    } else if (double.tryParse(value) != null) {
+                      return 'Value must not be a number';
+                    }
+                    return null;
+                  },
                 ),
-                IntrinsicHeight(
-                  child: Flex(
+              ),
+              IntrinsicHeight(
+                child: Flex(
+                  direction: Axis.horizontal,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Flexible(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextFormField(
+                          controller: _netAmountController1,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Net amount',
+                            errorStyle: TextStyle(height: 0.0),
+                            contentPadding: EdgeInsets.symmetric(vertical: 24.0, horizontal: 8),
+                          ),
+                          validator: (value) {
+                            if (!RegExp(r'^[0-9.]+$').hasMatch(value!)) {
+                              return 'Please enter net amount';
+                            } else if (value == "0") {
+                              return 'Net amount must be greater than 0';
+                            }
+                            return null;
+                          },
+                          onChanged: (String? value) {
+                            if (value != null) {
+                              setState(() {
+                                _grossAmountController.text = calculateVAT(value);
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButtonFormField<int>(
+                          alignment: AlignmentDirectional.topStart,
+                          isExpanded: true,
+                          value: vat,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Select VAT',
+                          ),
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Please select VAT';
+                            }
+                            return null;
+                          },
+                          items: const [
+                            DropdownMenuItem<int>(
+                              value: 0,
+                              child: Text("0%"),
+                            ),
+                            DropdownMenuItem<int>(
+                              value: 7,
+                              child: Text("7%"),
+                            ),
+                            DropdownMenuItem<int>(
+                              value: 23,
+                              child: Text("23%"),
+                            )
+                          ],
+                          onChanged: (int? value) {
+                            if (value != null) {
+                              setState(() {
+                                vat = value;
+                                _grossAmountController.text = calculateVAT(_netAmountController1.text);
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextFormField(
+                  controller: _grossAmountController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Gross amount',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some text';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              Column(
+                children: [
+                  Flex(
                     direction: Axis.horizontal,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Flexible(
-                        flex: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: TextFormField(
-                            controller: _netAmountController1,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'Net amount',
-                              errorStyle: TextStyle(height: 0.0),
-                              contentPadding: EdgeInsets.symmetric(vertical: 24.0, horizontal: 8),
+                        child: Flex(
+                          direction: Axis.horizontal,
+                          children: [
+                            Flexible(
+                              child: IconButton(
+                                iconSize: 40,
+                                onPressed: () => _pickFiles(),
+                                icon: const Icon(
+                                  Icons.add_box_outlined,
+                                ),
+                                // child: Text(_multiPick ? 'Pick files' : 'Pick file'),
+                              ),
                             ),
-                            validator: (value) {
-                              if (!RegExp(r'^[0-9.]+$').hasMatch(value!)) {
-                                return 'Please enter net amount';
-                              } else if (value == "0") {
-                                return 'Net amount must be greater than 0';
-                              }
-                              return null;
-                            },
-                            onChanged: (String? value) {
-                              if (value != null) {
-                                setState(() {
-                                  _grossAmountController.text = calculateVAT(value);
-                                });
-                              }
-                            },
-                          ),
+                            Flexible(
+                                flex: 2,
+                                child: Text("Attach an invoice".replaceAll("", "\u{200B}"), style: const TextStyle(overflow: TextOverflow.ellipsis)))
+                          ],
                         ),
                       ),
-                      Flexible(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: DropdownButtonFormField<int>(
-                            alignment: AlignmentDirectional.topStart,
-                            isExpanded: true,
-                            value: vat,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'Select VAT',
-                            ),
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select VAT';
-                              }
-                              return null;
-                            },
-                            items: const [
-                              DropdownMenuItem<int>(
-                                value: 0,
-                                child: Text("0%"),
-                              ),
-                              DropdownMenuItem<int>(
-                                value: 7,
-                                child: Text("7%"),
-                              ),
-                              DropdownMenuItem<int>(
-                                value: 23,
-                                child: Text("23%"),
-                              )
-                            ],
-                            onChanged: (int? value) {
-                              if (value != null) {
-                                setState(() {
-                                  vat = value;
-                                  _grossAmountController.text = calculateVAT(_netAmountController1.text);
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextFormField(
-                    controller: _grossAmountController,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Gross amount',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter some text';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                Column(
-                  children: [
-                    Flex(
-                      direction: Axis.horizontal,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Flex(
-                            direction: Axis.horizontal,
-                            children: [
+                      _paths?.isNotEmpty == true
+                          ? Flexible(
+                              child: Flex(
+                                direction: Axis.horizontal,
+                                children: [
                               Flexible(
-                                child: IconButton(
-                                  iconSize: 40,
-                                  onPressed: () => _pickFiles(),
-                                  icon: const Icon(
-                                    Icons.add_box_outlined,
-                                  ),
-                                  // child: Text(_multiPick ? 'Pick files' : 'Pick file'),
+                                child: SvgPicture.asset(
+                                  "assets/pdf-svgrepo-com.svg",
+                                  height: 40,
                                 ),
                               ),
                               Flexible(
-                                  flex: 2, child: Text("Attach an invoice".replaceAll("", "\u{200B}"), style: const TextStyle(overflow: TextOverflow.ellipsis)))
-                            ],
+                                flex: 3,
+                                child: Text(
+                                  _paths!.first.name.replaceAll("", "\u{200B}"),
+                                  style: const TextStyle(overflow: TextOverflow.ellipsis),
+                                ),
+                              ),
+                                ],
+                              ),
+                            )
+                          : Container(),
+                    ],
+                  ),
+                  if (_paths?.isEmpty ?? mode == AutovalidateMode.always)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 18.0),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Please attach a file",
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ],
+                      ),
+                    )
+                ],
+              ),
+                  if (_paths?.isNotEmpty == true && pdfController != null)
+                    SizedBox(
+                      height: 700,
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PdfViewPage(path: _paths?.first.path),
                           ),
                         ),
-                        _paths?.isNotEmpty == true
-                            ? Flexible(
-                                child: Container(
-                                    child: Flex(
-                                  direction: Axis.horizontal,
-                                  children: [
-                                    Flexible(
-                                      child: SvgPicture.asset(
-                                        "assets/pdf-svgrepo-com.svg",
-                                        height: 40,
-                                      ),
-                                    ),
-                                    Flexible(
-                                      flex: 3,
-                                      child: Text(
-                                        _paths!.first.name.replaceAll("", "\u{200B}"),
-                                        style: const TextStyle(overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ),
-                                  ],
-                                )),
-                              )
-                            : Container(),
-                      ],
-                    ),
-                    if (_paths?.isEmpty ?? mode == AutovalidateMode.always)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 18.0),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Please attach a file",
-                              style: TextStyle(color: Theme.of(context).colorScheme.error),
-                            ),
-                          ],
+                        child: PdfView(
+                          controller: pdfController!,
                         ),
-                      )
-                  ],
-                ),
-              ],
-            ),
+                      ),
+                    ),
+            ]),
           ),
         ));
   }

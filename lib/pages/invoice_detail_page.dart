@@ -37,7 +37,6 @@ class InvoiceDetailPageState extends State<InvoiceDetailPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF3B5570),
           actions: [editButton(), deleteButton()],
         ),
         body: isLoading

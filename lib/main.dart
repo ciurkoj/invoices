@@ -16,7 +16,9 @@ class MyApp extends StatelessWidget {
     title: title,
     themeMode: ThemeMode.dark,
     theme: ThemeData(
-      appBarTheme: const AppBarTheme(),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF3B5570),
+      ),
     ),
     home: const InvoicesPage(),
   );

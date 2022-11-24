@@ -81,7 +81,6 @@ class InvoicesPageState extends State<InvoicesPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF3B5570),
           title: const Text(
             'Invoices',
             style: TextStyle(fontSize: 24),
