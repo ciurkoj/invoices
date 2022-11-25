@@ -1,18 +1,24 @@
+import 'package:flutter/cupertino.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 class InvoiceDatabase {
-  static final InvoiceDatabase instance = InvoiceDatabase._init();
-
+  static InvoiceDatabase instance = InvoiceDatabase.init();
+  static bool opened = false;
   static Database? _database;
 
-  InvoiceDatabase._init();
+  InvoiceDatabase.init({bool? reopen}){
+    if(reopen ==true){
+      opened = reopen!;
+    }
+  }
 
   Future<Database> get database async {
-    if (_database != null) return _database!;
+    if (_database != null && !opened) return _database!;
 
     _database = await _initDB('invoices.db');
+    opened = false;
     return _database!;
   }
 

@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "890915989348",
+    "firebase_url": "https://invoices-3b9f1-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "invoices-3b9f1",
+    "storage_bucket": "invoices-3b9f1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:890915989348:android:731c72cab840b8c382bc71",
+        "android_client_info": {
+          "package_name": "com.example.invoices"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "890915989348-df580kla98dk0ei3tabpqe94o1edb52k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmnX4QqIds7yT8VuTN4Zl5z6Jkgt_i0I4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "890915989348-df580kla98dk0ei3tabpqe94o1edb52k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

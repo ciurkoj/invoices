@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:invoices/widgets/add_invoice_form_widget.dart';
 import 'package:invoices/pages/invoice_detail_page.dart';
 import 'package:invoices/widgets/invoice_card_widget.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -25,6 +28,7 @@ class InvoicesPageState extends State<InvoicesPage> {
   @override
   void initState() {
     super.initState();
+    InvoiceDatabase.init(reopen: true);
     refreshInvoices();
   }
 
@@ -83,6 +87,11 @@ class InvoicesPageState extends State<InvoicesPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          actions: [
+            IconButton(onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              }, icon: Icon(Icons.exit_to_app))
+          ],
           title: const Text(
             'Invoices',
             style: TextStyle(fontSize: 24),
