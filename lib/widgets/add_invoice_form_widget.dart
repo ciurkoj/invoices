@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:invoices/widgets/pdf_view_widget.dart';
-import 'package:path/path.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -11,34 +9,35 @@ import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:pdfx/pdfx.dart';
 
-class AddInvoiceFormPage extends StatefulWidget {
+class AddInvoiceFormWidget extends StatefulWidget {
   final Invoice? invoice;
+  final List<Widget>? actions;
 
-  const AddInvoiceFormPage({
+  AddInvoiceFormWidget({
     Key? key,
     this.invoice,
+    this.actions,
   }) : super(key: key);
 
   @override
-  AddInvoiceFormPageState createState() {
-    return AddInvoiceFormPageState();
+  AddInvoiceFormWidgetState createState() {
+    return AddInvoiceFormWidgetState();
   }
 }
 
-class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
+class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
   final _formKey = GlobalKey<FormState>();
 
-  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   List<PlatformFile>? _paths = [];
   late final TextEditingController _grossAmountController;
   late final TextEditingController _netAmountController1;
   late final TextEditingController _businessPartnerController;
   late final TextEditingController _invoiceIdController;
   PdfController? pdfController;
-  int vat = 0;
   AutovalidateMode mode = AutovalidateMode.onUserInteraction;
-  File? file;
   Color color = Colors.grey;
+  int? vat;
+  String? _filePath;
   Invoice? invoice;
 
 
@@ -46,27 +45,27 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   void initState() {
     super.initState();
     _grossAmountController = TextEditingController(text: widget.invoice?.grossAmount);
-    _netAmountController1 = TextEditingController(text: widget.invoice?.netAmount != null ? widget.invoice?.netAmount.toString() : "");
+    _netAmountController1 = TextEditingController(
+        text: widget.invoice?.netAmount
+            .toString()); // widget.invoice?.netAmount != null ? widget.invoice?.netAmount.toString() : null);
     _businessPartnerController = TextEditingController(text: widget.invoice?.businessPartner);
     _invoiceIdController = TextEditingController(text: widget.invoice?.invoiceId);
-    vat = widget.invoice?.vat ?? 0;
     if (widget.invoice != null) {
-      file = File(widget.invoice!.filePath);
-      int size = 0;
-      try {
-        size = file!.lengthSync();
-      } on FileSystemException {
-        print("Exception Occurs");
-      }
-      _paths?.add(PlatformFile(name: basename(file!.path), size: size, path: widget.invoice!.filePath));
+      setState(() {
+        vat = widget.invoice?.vat;
+        _filePath = widget.invoice?.file!['path'];
+        if (_filePath != null) {
+          pdfController = PdfController(document: PdfDocument.openFile(_filePath!));
+        }
+      });
       invoice = Invoice(
-          id: widget.invoice!.id,
-          invoiceId: widget.invoice!.invoiceId,
-          businessPartner: widget.invoice!.businessPartner,
-          netAmount: widget.invoice!.netAmount,
-          vat: widget.invoice!.vat,
-          grossAmount: widget.invoice!.grossAmount,
-          filePath: widget.invoice!.filePath);
+          id: widget.invoice?.id,
+          invoiceId: widget.invoice?.invoiceId,
+          businessPartner: widget.invoice?.businessPartner,
+          netAmount: widget.invoice?.netAmount,
+          vat: widget.invoice?.vat,
+          grossAmount: widget.invoice?.grossAmount,
+          file: widget.invoice?.file);
     }
   }
 
@@ -81,38 +80,30 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     }
     setState(() {
       _paths = null;
+      _filePath = null;
     });
-  }
-
-  void _logException(String message) {
-    _scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
-    _scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
   }
 
   void _pickFiles() async {
     _resetState();
-    try {
-      _paths = (await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']))?.files;
-      pdfController = PdfController(document: PdfDocument.openFile(_paths!.first.path!));
-    } on PlatformException catch (e) {
-      _logException('Unsupported operation$e');
-    } catch (e) {
-      _logException(e.toString());
-    }
-    if (!mounted) return;
+    _paths = (await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']))?.files;
     setState(() {
-      file = File(_paths!.first.path!);
+      if (_formKey.currentState?.validate() == true) {
+        setState(() {
+          color = Colors.greenAccent;
+        });
+      }
+      _filePath = _paths?.first.path;
+      if (_filePath != null) {
+        pdfController = PdfController(document: PdfDocument.openFile(_filePath!));
+      }
     });
+    if (!mounted) return;
   }
-
 
   String calculateVAT(String value) {
     double x = double.parse(value);
-    double p = (vat / 100);
+    double p = ((vat ?? 0) / 100);
     return (x + (x * p)).toStringAsFixed(2);
   }
 
@@ -122,6 +113,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
         appBar: AppBar(
           toolbarHeight: 80,
           actions: [
+            if(widget.actions?.isNotEmpty == true) widget.actions!.reduce((value, element) => element),
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: buildSaveButton(context),
@@ -144,8 +136,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8),
-            child: ListView(
-                children: <Widget>[
+            child: ListView(children: <Widget>[
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
@@ -280,85 +271,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
                   },
                 ),
               ),
-              Column(
-                children: [
-                  Flex(
-                    direction: Axis.horizontal,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Flex(
-                          direction: Axis.horizontal,
-                          children: [
-                            Flexible(
-                              child: IconButton(
-                                iconSize: 40,
-                                onPressed: () => _pickFiles(),
-                                icon: const Icon(
-                                  Icons.add_box_outlined,
-                                ),
-                                // child: Text(_multiPick ? 'Pick files' : 'Pick file'),
-                              ),
-                            ),
-                            Flexible(
-                                flex: 2,
-                                child: Text("Attach an invoice".replaceAll("", "\u{200B}"), style: const TextStyle(overflow: TextOverflow.ellipsis)))
-                          ],
-                        ),
-                      ),
-                      _paths?.isNotEmpty == true
-                          ? Flexible(
-                              child: Flex(
-                                direction: Axis.horizontal,
-                                children: [
-                              Flexible(
-                                child: SvgPicture.asset(
-                                  "assets/pdf-svgrepo-com.svg",
-                                  height: 40,
-                                ),
-                              ),
-                              Flexible(
-                                flex: 3,
-                                child: Text(
-                                  _paths!.first.name.replaceAll("", "\u{200B}"),
-                                  style: const TextStyle(overflow: TextOverflow.ellipsis),
-                                ),
-                              ),
-                                ],
-                              ),
-                            )
-                          : Container(),
-                    ],
-                  ),
-                  if (_paths?.isEmpty ?? mode == AutovalidateMode.always)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 18.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            "Please attach a file",
-                            style: TextStyle(color: Theme.of(context).colorScheme.error),
-                          ),
-                        ],
-                      ),
-                    )
-                ],
-              ),
-                  if (_paths?.isNotEmpty == true && pdfController != null)
-                    SizedBox(
-                      height: 700,
-                      child: InkWell(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PdfViewPage(path: _paths?.first.path),
-                          ),
-                        ),
-                        child: PdfView(
-                          controller: pdfController!,
-                        ),
-                      ),
-                    ),
+              buildAttachFile(context)
             ]),
           ),
         ));
@@ -374,13 +287,12 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
         ),
         onPressed: () async {
           if (color != Colors.grey) {
-            if (_formKey.currentState!.validate() && _paths != null) {
+            if (_formKey.currentState!.validate() && _filePath != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Processing Data')),
               );
               setState(() {
                 addOrUpdateInvoice(context);
-                vat = 0;
                 _paths = null;
                 _formKey.currentState!.reset();
                 _netAmountController1.text = '';
@@ -430,7 +342,7 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
     final isValid = _formKey.currentState!.validate();
 
     if (isValid) {
-      final isUpdating = invoice != null;
+      final isUpdating = widget.invoice != null;
 
       if (isUpdating) {
         await updateInvoice();
@@ -441,16 +353,15 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
   }
 
   Future updateInvoice() async {
-    final minvoice = invoice!.copy(
-      id: invoice!.id,
-      invoiceId: _invoiceIdController.text,
-      businessPartner: _businessPartnerController.text,
-      vat: vat,
-      netAmount: double.parse(_netAmountController1.text),
-      grossAmount: _grossAmountController.text,
-      filePath: file!.path,
-    );
-    await InvoiceDatabase.instance.update(minvoice);
+    final invoice = widget.invoice?.copy(
+        id: widget.invoice!.id,
+        invoiceId: _invoiceIdController.text,
+        businessPartner: _businessPartnerController.text,
+        vat: vat,
+        netAmount: double.parse(_netAmountController1.text),
+        grossAmount: _grossAmountController.text,
+        file: widget.invoice?.file);
+    invoice != null ? await InvoiceDatabase.instance.update(invoice) : null;
   }
 
   Future addInvoice() async {
@@ -460,7 +371,88 @@ class AddInvoiceFormPageState extends State<AddInvoiceFormPage> {
       vat: vat,
       netAmount: double.parse(_netAmountController1.text),
       grossAmount: _grossAmountController.text,
-      filePath: file!.path,
+      file: _paths != null ? const PlatformFileSerializer().toJson(_paths!.first) : null,
     ));
   }
+
+  Widget buildAttachFile(BuildContext context) => Column(
+        children: [
+          Flex(
+            direction: Axis.horizontal,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Flex(
+                  direction: Axis.horizontal,
+                  children: [
+                    Flexible(
+                      child: IconButton(
+                        iconSize: 40,
+                        onPressed: () => _pickFiles(),
+                        icon: const Icon(
+                          Icons.add_box_outlined,
+                        ),
+                        // child: Text(_multiPick ? 'Pick files' : 'Pick file'),
+                      ),
+                    ),
+                    Flexible(
+                        flex: 2,
+                        child: Text("Attach an invoice".replaceAll("", "\u{200B}"),
+                            style: const TextStyle(overflow: TextOverflow.ellipsis)))
+                  ],
+                ),
+              ),
+              (widget.invoice != null && _filePath != null)
+                  ? Flexible(
+                      child: Flex(
+                        direction: Axis.horizontal,
+                        children: [
+                          Flexible(
+                            child: SvgPicture.asset(
+                              "assets/pdf-svgrepo-com.svg",
+                              height: 40,
+                            ),
+                          ),
+                          Flexible(
+                            flex: 3,
+                            child: Text(
+                              widget.invoice?.file!['name']!.replaceAll("", "\u{200B}"),
+                              style: const TextStyle(overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Container(),
+            ],
+          ),
+          if (_filePath == null)
+            Padding(
+              padding: const EdgeInsets.only(left: 18.0),
+              child: Row(
+                children: [
+                  Text(
+                    "Please attach a file",
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+              ),
+            ),
+          if (_filePath != null)
+            SizedBox(
+              height: 600,
+              child: InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PdfViewPage(path: _filePath),
+                  ),
+                ),
+                child: PdfView(
+                  controller: pdfController!,
+                ),
+              ),
+            ),
+        ],
+      );
 }

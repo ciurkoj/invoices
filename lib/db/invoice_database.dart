@@ -37,7 +37,7 @@ class InvoiceDatabase {
     ${InvoiceFields.netAmount} $doubleType,  
     ${InvoiceFields.grossAmount} $textType,  
     ${InvoiceFields.vat} $integerType,
-    ${InvoiceFields.filePath} $textType
+    ${InvoiceFields.file} $textType
     )
     ''');
   }
@@ -45,7 +45,7 @@ class InvoiceDatabase {
   Future<Invoice> create(Invoice invoice) async {
     final db = await instance.database;
 
-    final id = await (db.insert(tableInvoice, invoice.toJson()));
+    final id = await (db.insert(tableInvoice, invoice.toJson(invoice)));
     return invoice.copy(id: id);
   }
 
@@ -79,7 +79,7 @@ class InvoiceDatabase {
 
     return db.update(
       tableInvoice,
-      invoice.toJson(),
+      invoice.toJson(invoice),
       where: '${InvoiceFields.id} = ?',
       whereArgs: [invoice.id],
     );

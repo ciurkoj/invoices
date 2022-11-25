@@ -7,6 +7,7 @@ class PdfViewPage extends StatefulWidget {
 
   PdfViewPage({Key? key, this.path}) : super(key: key);
 
+  @override
   _PdfViewPageState createState() => _PdfViewPageState();
 }
 
@@ -65,7 +66,7 @@ class _PdfViewPageState extends State<PdfViewPage> with WidgetsBindingObserver, 
                           padding: const EdgeInsets.all(8.0),
                           child: Align(
                               alignment: Alignment.bottomCenter,
-                              child: Container(child: Text("$currentPage/${_pdfController.pagesCount}")))),
+                              child: Text("$currentPage/${_pdfController.pagesCount}"))),
                     )
                   : Positioned.fill(
                       child: Padding(

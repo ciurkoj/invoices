@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
-import 'package:invoices/pages/add_invoice_form_page.dart';
+import 'package:invoices/widgets/add_invoice_form_widget.dart';
 import 'package:invoices/pages/invoice_detail_page.dart';
 import 'package:invoices/widgets/invoice_card_widget.dart';
 
@@ -48,19 +48,21 @@ class InvoicesPageState extends State<InvoicesPage> {
       List<Invoice> dummyListData = <Invoice>[];
       dummySearchList.forEach((item) {
         if (searchByValue == InvoiceFields.invoiceId) {
-          if (item.invoiceId.contains(query)) {
+          if (item.invoiceId!.contains(query)) {
             dummyListData.add(item);
           }
         } else if (searchByValue == InvoiceFields.businessPartner) {
-          if (item.businessPartner.contains(query)) {
+          if (item.businessPartner!.contains(query)) {
             dummyListData.add(item);
           }
         } else if (searchByValue == InvoiceFields.grossAmount) {
-          if (item.grossAmount.contains(query)) {
+          if (item.grossAmount!.contains(query)) {
             dummyListData.add(item);
           }
         } else {
-          if (item.invoiceId.contains(query) || item.businessPartner.contains(query) || item.grossAmount.contains(query)) {
+          if (item.invoiceId!.contains(query) ||
+              item.businessPartner!.contains(query) ||
+              item.grossAmount!.contains(query)) {
             dummyListData.add(item);
           }
         }
@@ -108,7 +110,7 @@ class InvoicesPageState extends State<InvoicesPage> {
           child: const Icon(Icons.add),
           onPressed: () async {
             await Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const AddInvoiceFormPage()),
+              MaterialPageRoute(builder: (context) => AddInvoiceFormWidget()),
             );
             refreshInvoices();
           },
@@ -133,10 +135,10 @@ class InvoicesPageState extends State<InvoicesPage> {
             },
             child: InvoiceCardWidget(
                 highlighted: searchByValue,
-                invoiceId: invoices[index].invoiceId,
-                businessPartner: invoices[index].businessPartner,
+                invoiceId: invoices[index].invoiceId!,
+                businessPartner: invoices[index].businessPartner!,
                 netAmount: invoices[index].netAmount.toString(),
-                grossAmount: invoices[index].grossAmount,
+                grossAmount: invoices[index].grossAmount!,
                 vat: invoices[index].vat.toString(),
                 svgPath: "assets/pdf-svgrepo-com.svg"),
           );
