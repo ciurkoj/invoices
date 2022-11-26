@@ -33,11 +33,11 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(),
       body: Center(
         child: Padding(
-          padding: EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   controller: _loginController,
                   decoration: const InputDecoration(
@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   controller: _passwordController,
                   obscureText: true,
@@ -58,10 +58,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                   onPressed: signIn,
-                  child: Text("login"),
+                  child: const Text("login"),
                 ),
               )
             ],

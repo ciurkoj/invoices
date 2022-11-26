@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:invoices/db/invoice_database.dart';
@@ -7,8 +9,6 @@ import 'package:invoices/models/invoice.dart';
 import 'package:invoices/widgets/add_invoice_form_widget.dart';
 import 'package:invoices/pages/invoice_detail_page.dart';
 import 'package:invoices/widgets/invoice_card_widget.dart';
-import 'package:firebase_core/firebase_core.dart';
-
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -24,6 +24,8 @@ class InvoicesPageState extends State<InvoicesPage> {
   String? searchByValue;
 
   TextEditingController editingController = TextEditingController();
+  var collection =
+      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
 
   @override
   void initState() {
@@ -40,9 +42,24 @@ class InvoicesPageState extends State<InvoicesPage> {
 
   Future refreshInvoices() async {
     setState(() => isLoading = true);
-    invoices = await InvoiceDatabase.instance.readAllInvoices();
-    invoices1 = await InvoiceDatabase.instance.readAllInvoices();
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    //not the best, but fast to implement offline mode support
+    if (connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
+      invoices = await getInvoicesFromFirebase();
+      invoices1 = await getInvoicesFromFirebase();
+    } else {
+      invoices = await InvoiceDatabase.instance.readAllInvoices();
+      invoices1 = await InvoiceDatabase.instance.readAllInvoices();
+    }
     setState(() => isLoading = false);
+  }
+
+  Future<List<Invoice>> getInvoicesFromFirebase() async {
+    QuerySnapshot querySnapshot = await collection.get();
+
+    final allData = querySnapshot.docs.map((doc) => doc.data()).toList();
+
+    return allData.map((e) => Invoice.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   void filterSearchResults(String query) {
@@ -88,9 +105,11 @@ class InvoicesPageState extends State<InvoicesPage> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           actions: [
-            IconButton(onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              }, icon: Icon(Icons.exit_to_app))
+            IconButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                },
+                icon: const Icon(Icons.exit_to_app))
           ],
           title: const Text(
             'Invoices',
@@ -118,10 +137,14 @@ class InvoicesPageState extends State<InvoicesPage> {
           backgroundColor: const Color(0xFF3B5570),
           child: const Icon(Icons.add),
           onPressed: () async {
-            await Navigator.of(context).push(
+            await Navigator.of(context)
+                .push(
               MaterialPageRoute(builder: (context) => AddInvoiceFormWidget()),
-            );
-            refreshInvoices();
+            )
+                .then((value) {
+              refreshInvoices();
+              setState(() {});
+            });
           },
         ),
       );
@@ -155,7 +178,7 @@ class InvoicesPageState extends State<InvoicesPage> {
       );
 
   Widget buildSearchBar() {
-    TextStyle style = TextStyle(overflow: TextOverflow.ellipsis);
+    TextStyle style = const TextStyle(overflow: TextOverflow.ellipsis);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Container(

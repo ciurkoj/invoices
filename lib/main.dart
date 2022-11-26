@@ -26,7 +26,18 @@ class MyApp extends StatelessWidget {
         backgroundColor: Color(0xFF3B5570),
       ),
     ),
-    home: MainPage(),
+    home: Scaffold(
+        body: StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if(snapshot.hasData) {
+                return const InvoicesPage();
+              } else{
+                return const LoginPage();
+              }
+            }
+        )
+    ),
   );
 }
 class MainPage extends StatelessWidget {
@@ -34,15 +45,14 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Scaffold(
       body: StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
             if(snapshot.hasData) {
-              return InvoicesPage();
+              return const InvoicesPage();
             } else{
-              return LoginPage();
+              return const LoginPage();
             }
           }
       )

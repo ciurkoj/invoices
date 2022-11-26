@@ -3,9 +3,9 @@ import 'package:pdfx/pdfx.dart';
 import 'package:path/path.dart';
 
 class PdfViewPage extends StatefulWidget {
-  final String? path;
+  final PdfController pdfController;
 
-  PdfViewPage({Key? key, this.path}) : super(key: key);
+  PdfViewPage({Key? key, required this.pdfController}) : super(key: key);
 
   @override
   _PdfViewPageState createState() => _PdfViewPageState();
@@ -21,7 +21,7 @@ class _PdfViewPageState extends State<PdfViewPage> with WidgetsBindingObserver, 
 
   @override
   void initState() {
-    _pdfController = PdfController(document: PdfDocument.openFile(widget.path!));
+    _pdfController = widget.pdfController;
     super.initState();
   }
 

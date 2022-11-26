@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -40,9 +39,9 @@ class InvoiceDatabase {
     ${InvoiceFields.id} $idType, 
     ${InvoiceFields.invoiceId} $textType, 
     ${InvoiceFields.businessPartner} $textType,  
-    ${InvoiceFields.netAmount} $doubleType,  
+    ${InvoiceFields.netAmount} $integerType,  
     ${InvoiceFields.grossAmount} $textType,  
-    ${InvoiceFields.vat} $integerType,
+    ${InvoiceFields.vat} $doubleType,
     ${InvoiceFields.file} $textType
     )
     ''');

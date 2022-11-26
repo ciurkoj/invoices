@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:invoices/widgets/pdf_view_widget.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -36,37 +40,58 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
   PdfController? pdfController;
   AutovalidateMode mode = AutovalidateMode.onUserInteraction;
   Color color = Colors.grey;
-  int? vat;
+  double? vat;
+  PlatformFile? file;
   String? _filePath;
   Invoice? invoice;
+  var collection =
+      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
+  final storageRef = FirebaseStorage.instance.ref().child(FirebaseAuth.instance.currentUser!.uid);
 
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _grossAmountController = TextEditingController(text: widget.invoice?.grossAmount);
-    _netAmountController1 = TextEditingController(
-        text: widget.invoice?.netAmount
-            .toString()); // widget.invoice?.netAmount != null ? widget.invoice?.netAmount.toString() : null);
+    _netAmountController1 = TextEditingController(text: widget.invoice?.netAmount.toString());
     _businessPartnerController = TextEditingController(text: widget.invoice?.businessPartner);
     _invoiceIdController = TextEditingController(text: widget.invoice?.invoiceId);
     if (widget.invoice != null) {
       setState(() {
         vat = widget.invoice?.vat;
+        file = PlatformFileSerializer().fromJson(widget.invoice!.file!);
         _filePath = widget.invoice?.file!['path'];
+
+        invoice = Invoice(
+            id: widget.invoice?.id,
+            invoiceId: widget.invoice?.invoiceId,
+            businessPartner: widget.invoice?.businessPartner,
+            netAmount: widget.invoice?.netAmount,
+            vat: widget.invoice?.vat,
+            grossAmount: widget.invoice?.grossAmount,
+            file: widget.invoice?.file);
+
         if (_filePath != null) {
-          pdfController = PdfController(document: PdfDocument.openFile(_filePath!));
+          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            initiateController().then((value) {
+              pdfController = value;
+              _resetState();
+            });
+          });
         }
       });
-      invoice = Invoice(
-          id: widget.invoice?.id,
-          invoiceId: widget.invoice?.invoiceId,
-          businessPartner: widget.invoice?.businessPartner,
-          netAmount: widget.invoice?.netAmount,
-          vat: widget.invoice?.vat,
-          grossAmount: widget.invoice?.grossAmount,
-          file: widget.invoice?.file);
     }
+  }
+
+  Future<PdfController> initiateController() async {
+    if (invoice!.file!['name'] != null) {
+      isLoading = true;
+      final pathReference = storageRef.child("${invoice!.file!['name']}");
+      var dataBytes = (await http.get(Uri.parse(await pathReference.getDownloadURL()))).bodyBytes;
+      return PdfController(document: PdfDocument.openData(dataBytes));
+    }
+    return PdfController(document: PdfDocument.openFile(_filePath!));
   }
 
   @override
@@ -81,6 +106,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
     setState(() {
       _paths = null;
       _filePath = null;
+      isLoading = false;
     });
   }
 
@@ -91,9 +117,10 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
       if (_formKey.currentState?.validate() == true) {
         setState(() {
           color = Colors.greenAccent;
+          _filePath = _paths?.first.path;
+          file = _paths?.first;
         });
       }
-      _filePath = _paths?.first.path;
       if (_filePath != null) {
         pdfController = PdfController(document: PdfDocument.openFile(_filePath!));
       }
@@ -113,7 +140,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
         appBar: AppBar(
           toolbarHeight: 80,
           actions: [
-            if(widget.actions?.isNotEmpty == true) widget.actions!.reduce((value, element) => element),
+            if (widget.actions?.isNotEmpty == true) widget.actions!.reduce((value, element) => element),
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: buildSaveButton(context),
@@ -212,7 +239,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                     Flexible(
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: DropdownButtonFormField<int>(
+                        child: DropdownButtonFormField<double>(
                           alignment: AlignmentDirectional.topStart,
                           isExpanded: true,
                           value: vat,
@@ -227,20 +254,20 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                             return null;
                           },
                           items: const [
-                            DropdownMenuItem<int>(
+                            DropdownMenuItem<double>(
                               value: 0,
                               child: Text("0%"),
                             ),
-                            DropdownMenuItem<int>(
+                            DropdownMenuItem<double>(
                               value: 7,
                               child: Text("7%"),
                             ),
-                            DropdownMenuItem<int>(
+                            DropdownMenuItem<double>(
                               value: 23,
                               child: Text("23%"),
                             )
                           ],
-                          onChanged: (int? value) {
+                          onChanged: (double? value) {
                             if (value != null) {
                               setState(() {
                                 vat = value;
@@ -291,16 +318,20 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Processing Data')),
               );
-              setState(() {
-                addOrUpdateInvoice(context);
-                _paths = null;
-                _formKey.currentState!.reset();
-                _netAmountController1.text = '';
-                _grossAmountController.text = '';
-                _businessPartnerController.text = '';
-                _invoiceIdController.text = '';
-                mode = AutovalidateMode.disabled;
-              });
+              if (file != null) {
+                setState(() {
+                  invoice = Invoice(
+                    invoiceId: _invoiceIdController.text,
+                    businessPartner: _businessPartnerController.text,
+                    vat: vat,
+                    netAmount: double.parse(_netAmountController1.text),
+                    grossAmount: _grossAmountController.text,
+                    file: const PlatformFileSerializer().toJson(file!),
+                  );
+                  addOrUpdateInvoice(context, invoice!);
+                  mode = AutovalidateMode.disabled;
+                });
+              }
             } else {
               setState(() {
                 mode = AutovalidateMode.always;
@@ -321,7 +352,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
     );
   }
 
-  void addOrUpdateInvoice(BuildContext context) async {
+  void addOrUpdateInvoice(BuildContext context, Invoice invoice) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -345,34 +376,31 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
       final isUpdating = widget.invoice != null;
 
       if (isUpdating) {
-        await updateInvoice();
+        await updateInvoice(invoice);
       } else {
-        await addInvoice();
+        await addInvoice(invoice);
       }
     }
   }
 
-  Future updateInvoice() async {
-    final invoice = widget.invoice?.copy(
+  Future updateInvoice(Invoice invoice) async {
+    collection.doc(widget.invoice!.invoiceId.toString()).delete();
+    collection.doc(invoice.invoiceId.toString()).set(invoice.toJson(invoice));
+
+    await InvoiceDatabase.instance.update(widget.invoice!.copy(
         id: widget.invoice!.id,
         invoiceId: _invoiceIdController.text,
         businessPartner: _businessPartnerController.text,
         vat: vat,
         netAmount: double.parse(_netAmountController1.text),
         grossAmount: _grossAmountController.text,
-        file: widget.invoice?.file);
-    invoice != null ? await InvoiceDatabase.instance.update(invoice) : null;
+        file: widget.invoice?.file));
   }
 
-  Future addInvoice() async {
-    await InvoiceDatabase.instance.create(Invoice(
-      invoiceId: _invoiceIdController.text,
-      businessPartner: _businessPartnerController.text,
-      vat: vat,
-      netAmount: double.parse(_netAmountController1.text),
-      grossAmount: _grossAmountController.text,
-      file: _paths != null ? const PlatformFileSerializer().toJson(_paths!.first) : null,
-    ));
+  Future addInvoice(invoice) async {
+    await InvoiceDatabase.instance
+        .create(invoice)
+        .then((value) => collection.doc(invoice.invoiceId.toString()).set(invoice!.toJson(invoice!)));
   }
 
   Widget buildAttachFile(BuildContext context) => Column(
@@ -402,7 +430,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                   ],
                 ),
               ),
-              (widget.invoice != null && _filePath != null)
+              (widget.invoice != null && pdfController != null)
                   ? Flexible(
                       child: Flex(
                         direction: Axis.horizontal,
@@ -426,7 +454,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                   : Container(),
             ],
           ),
-          if (_filePath == null)
+          if (pdfController == null)
             Padding(
               padding: const EdgeInsets.only(left: 18.0),
               child: Row(
@@ -438,21 +466,24 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                 ],
               ),
             ),
-          if (_filePath != null)
-            SizedBox(
-              height: 600,
-              child: InkWell(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PdfViewPage(path: _filePath),
+          pdfController != null
+              ? SizedBox(
+                  height: 600,
+                  child: InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PdfViewPage(pdfController: pdfController!),
+                      ),
+                    ),
+                    child: PdfView(
+                      controller: pdfController!,
+                    ),
                   ),
+                )
+              : Center(
+                  child: CircularProgressIndicator(),
                 ),
-                child: PdfView(
-                  controller: pdfController!,
-                ),
-              ),
-            ),
         ],
       );
 }

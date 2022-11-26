@@ -29,7 +29,7 @@ class Invoice {
   final String? businessPartner;
   final double? netAmount;
   @JsonKey(name: 'VAT')
-  final int? vat;
+  final double? vat;
   final String? grossAmount;
   final Map<String, dynamic>? file;
 
@@ -40,7 +40,7 @@ class Invoice {
     String? invoiceId,
     String? businessPartner,
     double? netAmount,
-    int? vat,
+    double? vat,
     String? grossAmount,
     Map<String, dynamic>? file,
   }) =>
@@ -58,7 +58,7 @@ class Invoice {
         invoiceId: json['invoiceId'] as String?,
         businessPartner: json['businessPartner'] as String?,
         netAmount: (json['netAmount'] as num?)?.toDouble(),
-        vat: json['VAT'] as int? ?? 0,
+        vat: json['VAT'] as double? ?? 0 ,
         grossAmount: json['grossAmount'] as String?,
         file: jsonDecode(json['file']) as Map<String, dynamic>?,
       );
@@ -82,7 +82,7 @@ class PlatformFileSerializer implements JsonConverter<PlatformFile, Map<String, 
         path: json['path'] as String,
         name: json['name'] as String,
         size: int.parse(json['size']),
-        bytes: Uint8List.fromList(json['bytes']),
+        bytes: json["bytes"] != null ? Uint8List.fromList(json['bytes']) : null,
         readStream: json['readStream'] as Stream<List<int>>?,
         identifier: json['identifier'] as String?,
       );
@@ -92,7 +92,7 @@ class PlatformFileSerializer implements JsonConverter<PlatformFile, Map<String, 
         "path": instance.path != null ? "${instance.path}" : null,
         "name": instance.name != null ? "${instance.name}" : null,
         "size": instance.size != null ? "${instance.size}" : null,
-        "bytes": instance.bytes != null ? "${instance.bytes}" : <int>[],
+        "bytes": instance.bytes != null ? "${instance.bytes}" : null,
         "readStream": instance.readStream != null ? "${instance.readStream}" : null,
         "identifier": instance.identifier != null ? "${instance.identifier}" : null,
       };

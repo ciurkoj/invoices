@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
@@ -16,9 +18,9 @@ class InvoiceDetailPage extends StatefulWidget {
 }
 
 class InvoiceDetailPageState extends State<InvoiceDetailPage> {
-  late Invoice invoice;
+  Invoice? invoice;
   bool isLoading = false;
-
+  var collection = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
   @override
   void initState() {
     super.initState();
@@ -28,8 +30,8 @@ class InvoiceDetailPageState extends State<InvoiceDetailPage> {
 
   Future refreshInvoice() async {
     setState(() => isLoading = true);
-
-    invoice = await InvoiceDatabase.instance.readInvoice(widget.invoice.id!);
+    invoice ??= Invoice.fromJson((await collection.doc(widget.invoice.invoiceId.toString()).get()).data()!);
+    invoice ??= await InvoiceDatabase.instance.readInvoice(widget.invoice.id!);
 
     setState(() => isLoading = false);
   }
