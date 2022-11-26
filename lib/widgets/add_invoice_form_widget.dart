@@ -481,9 +481,9 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                     ),
                   ),
                 )
-              : Center(
+              : invoice != null ? Center(
                   child: CircularProgressIndicator(),
-                ),
+                ):Container(),
         ],
       );
 }
