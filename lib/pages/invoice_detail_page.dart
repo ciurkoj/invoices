@@ -49,7 +49,8 @@ class InvoiceDetailPageState extends State<InvoiceDetailPage> {
   Widget deleteButton() => IconButton(
         icon: const Icon(Icons.delete),
         onPressed: () async {
-          await InvoiceDatabase.instance.delete(widget.invoice.id!);
+          await collection.doc(widget.invoice.invoiceId.toString()).delete();
+          // await InvoiceDatabase.instance.delete(widget.invoice.id!);
 
           Navigator.of(context).pop();
         },
