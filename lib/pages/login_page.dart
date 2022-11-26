@@ -36,6 +36,7 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              Text("Login Page"),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
@@ -73,10 +74,8 @@ class _LoginPageState extends State<LoginPage> {
 
   Future signIn() async {
     try {
-       await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _loginController.text.trim(),
-          password: _passwordController.text.trim()
-      );
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: _loginController.text.trim(), password: _passwordController.text.trim());
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         print('No user found for that email.');
@@ -84,6 +83,5 @@ class _LoginPageState extends State<LoginPage> {
         print('Wrong password provided for that user.');
       }
     }
-
   }
 }

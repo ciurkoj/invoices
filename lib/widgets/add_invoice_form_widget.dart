@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:invoices/change_notifiers/invoice_cn.dart';
+import 'package:invoices/models/platform_file_serializer.dart';
+import 'package:invoices/pages/invoices_page.dart';
 import 'package:invoices/widgets/pdf_view_widget.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +15,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:provider/provider.dart';
 
 class AddInvoiceFormWidget extends StatefulWidget {
   final Invoice? invoice;
@@ -49,6 +53,9 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
   final storageRef = FirebaseStorage.instance.ref().child(FirebaseAuth.instance.currentUser!.uid);
 
   bool isLoading = false;
+  bool _invoiceIdValid = true;
+  late InvoiceCN invoiceCn;
+
 
   @override
   void initState() {
@@ -57,6 +64,11 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
     _netAmountController1 = TextEditingController(text: widget.invoice?.netAmount.toString());
     _businessPartnerController = TextEditingController(text: widget.invoice?.businessPartner);
     _invoiceIdController = TextEditingController(text: widget.invoice?.invoiceId);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      invoiceCn = Provider.of<InvoiceCN>(context);
+      invoiceCn.refreshInvoices();
+    });
+
     if (widget.invoice != null) {
       setState(() {
         vat = widget.invoice?.vat;
@@ -97,41 +109,6 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
   @override
   void dispose() {
     super.dispose();
-  }
-
-  void _resetState() {
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _paths = null;
-      _filePath = null;
-      isLoading = false;
-    });
-  }
-
-  void _pickFiles() async {
-    _resetState();
-    _paths = (await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']))?.files;
-    setState(() {
-      if (_formKey.currentState?.validate() == true) {
-        setState(() {
-          color = Colors.greenAccent;
-          _filePath = _paths?.first.path;
-          file = _paths?.first;
-        });
-      }
-      if (_filePath != null) {
-        pdfController = PdfController(document: PdfDocument.openFile(_filePath!));
-      }
-    });
-    if (!mounted) return;
-  }
-
-  String calculateVAT(String value) {
-    double x = double.parse(value);
-    double p = ((vat ?? 0) / 100);
-    return (x + (x * p)).toStringAsFixed(2);
   }
 
   @override
@@ -177,8 +154,21 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                       return 'Please enter invoice id';
                     } else if (double.tryParse(value) != null) {
                       return 'Value must not be a number';
+                    } else if (!_invoiceIdValid){
+                      return 'Invoice Id already taken';
                     }
                     return null;
+                  },
+                  onChanged: (value){
+                    if(invoiceCn.invoices.any((element) => element.invoiceId == value) == true){
+                      setState(() {
+                        _invoiceIdValid = false;
+                      });
+                    }else{
+                      setState(() {
+                        _invoiceIdValid = true;
+                      });
+                    }
                   },
                 ),
               ),
@@ -304,6 +294,41 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
         ));
   }
 
+  void _resetState() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _paths = null;
+      _filePath = null;
+      isLoading = false;
+    });
+  }
+
+  void _pickFiles() async {
+    _resetState();
+    _paths = (await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']))?.files;
+    setState(() {
+      if (_formKey.currentState?.validate() == true) {
+        setState(() {
+          color = Colors.greenAccent;
+          _filePath = _paths?.first.path;
+          file = _paths?.first;
+        });
+      }
+      if (_filePath != null) {
+        pdfController = PdfController(document: PdfDocument.openFile(_filePath!));
+      }
+    });
+    if (!mounted) return;
+  }
+
+  String calculateVAT(String value) {
+    double x = double.parse(value);
+    double p = ((vat ?? 0) / 100);
+    return (x + (x * p)).toStringAsFixed(2);
+  }
+
   Widget buildSaveButton(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -351,6 +376,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
       ),
     );
   }
+
 
   void addOrUpdateInvoice(BuildContext context, Invoice invoice) async {
     showDialog(
@@ -481,9 +507,11 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                     ),
                   ),
                 )
-              : invoice != null ? Center(
-                  child: CircularProgressIndicator(),
-                ):Container(),
+              : invoice != null
+                  ? Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : Container(),
         ],
       );
 }

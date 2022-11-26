@@ -20,7 +20,9 @@ class InvoiceDetailPage extends StatefulWidget {
 class InvoiceDetailPageState extends State<InvoiceDetailPage> {
   Invoice? invoice;
   bool isLoading = false;
-  var collection = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
+  var collection =
+      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
+
   @override
   void initState() {
     super.initState();

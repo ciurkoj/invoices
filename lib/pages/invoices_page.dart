@@ -4,11 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:invoices/change_notifiers/invoice_cn.dart';
 import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 import 'package:invoices/widgets/add_invoice_form_widget.dart';
 import 'package:invoices/pages/invoice_detail_page.dart';
 import 'package:invoices/widgets/invoice_card_widget.dart';
+import 'package:provider/provider.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -18,20 +20,24 @@ class InvoicesPage extends StatefulWidget {
 }
 
 class InvoicesPageState extends State<InvoicesPage> {
-  List<Invoice> invoices = [];
-  List<Invoice> invoices1 = [];
   bool isLoading = false;
   String? searchByValue;
 
   TextEditingController editingController = TextEditingController();
-  var collection =
-      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
+  // InvoiceCN? invoiceCn;
+  ValueNotifier<InvoiceCN> invoiceCn = ValueNotifier(InvoiceCN());
 
   @override
   void initState() {
     super.initState();
     InvoiceDatabase.init(reopen: true);
-    refreshInvoices();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      // invoiceCn = Provider.of<InvoiceCN>(context);
+      // invoiceCn.refreshInvoices();
+      setState(() {
+
+      });
+    });
   }
 
   @override
@@ -40,31 +46,24 @@ class InvoicesPageState extends State<InvoicesPage> {
     super.dispose();
   }
 
-  Future refreshInvoices() async {
-    setState(() => isLoading = true);
-    var connectivityResult = await (Connectivity().checkConnectivity());
-    //not the best, but fast to implement offline mode support
-    if (connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
-      invoices = await getInvoicesFromFirebase();
-      invoices1 = await getInvoicesFromFirebase();
-    } else {
-      invoices = await InvoiceDatabase.instance.readAllInvoices();
-      invoices1 = await InvoiceDatabase.instance.readAllInvoices();
-    }
-    setState(() => isLoading = false);
-  }
-
-  Future<List<Invoice>> getInvoicesFromFirebase() async {
-    QuerySnapshot querySnapshot = await collection.get();
-
-    final allData = querySnapshot.docs.map((doc) => doc.data()).toList();
-
-    return allData.map((e) => Invoice.fromJson(e as Map<String, dynamic>)).toList();
-  }
+  // Future refreshInvoices() async {
+  //   setState(() => isLoading = true);
+  //   var connectivityResult = await (Connectivity().checkConnectivity());
+  //   //not the best, but fast to implement offline mode support
+  //   if (connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
+  //     invoices = await getInvoicesFromFirebase();
+  //     invoices1 = await getInvoicesFromFirebase();
+  //   } else {
+  //     invoices = await InvoiceDatabase.instance.readAllInvoices();
+  //     invoices1 = await InvoiceDatabase.instance.readAllInvoices();
+  //   }
+  //   setState(() => isLoading = false);
+  // }
 
   void filterSearchResults(String query) {
     List<Invoice> dummySearchList = <Invoice>[];
-    dummySearchList.addAll(invoices);
+    if(invoiceCn!=null){
+    dummySearchList.addAll(invoiceCn!.value.invoices);
     if (query.isNotEmpty) {
       List<Invoice> dummyListData = <Invoice>[];
       dummySearchList.forEach((item) {
@@ -89,90 +88,97 @@ class InvoicesPageState extends State<InvoicesPage> {
         }
       });
       setState(() {
-        invoices.clear();
-        invoices.addAll(dummyListData);
+        invoiceCn!.value.invoices.clear();
+        invoiceCn!.value.invoices.addAll(dummyListData);
       });
       return;
     } else {
       setState(() {
-        invoices.clear();
-        invoices.addAll(invoices1);
+        invoiceCn!.value.invoices.clear();
+        invoiceCn!.value.invoices.addAll(invoiceCn!.value.invoices1);
       });
-    }
+    }}
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                },
-                icon: const Icon(Icons.exit_to_app))
-          ],
-          title: const Text(
-            'Invoices',
-            style: TextStyle(fontSize: 24),
+  Widget build(BuildContext context) {
+    invoiceCn?.value.refreshInvoices();
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+              },
+              icon: const Icon(Icons.exit_to_app))
+        ],
+        title: const Text(
+          'Invoices',
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
+      body: Column(
+        children: [
+          ValueListenableBuilder(
+              valueListenable: invoiceCn,
+              builder: (context, value, widget) {
+              return buildSearchBar();
+            }
           ),
-        ),
-        body: Column(
-          children: [
-            buildSearchBar(),
-            Expanded(
-              child: Center(
-                child: isLoading
-                    ? const CircularProgressIndicator()
-                    : invoices.isEmpty
-                        ? const Text(
-                            'No Invoices',
-                            style: TextStyle(color: Colors.white, fontSize: 24),
-                          )
-                        : buildInvoices(),
-              ),
+          Expanded(
+            child: Center(
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : invoiceCn != null && invoiceCn!.value.invoices.isEmpty
+                  ? const Text(
+                'No Invoices',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              )
+                  : buildInvoices(),
             ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: const Color(0xFF3B5570),
-          child: const Icon(Icons.add),
-          onPressed: () async {
-            await Navigator.of(context)
-                .push(
-              MaterialPageRoute(builder: (context) => AddInvoiceFormWidget()),
-            )
-                .then((value) {
-              refreshInvoices();
-              setState(() {});
-            });
-          },
-        ),
-      );
-
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF3B5570),
+        child: const Icon(Icons.add),
+        onPressed: () async {
+          await Navigator.of(context)
+              .push(
+            MaterialPageRoute(builder: (context) => AddInvoiceFormWidget()),
+          )
+              .then((value) {
+            invoiceCn?.value.refreshInvoices();
+            setState(() {});
+          });
+        },
+      ),
+    );
+  }
   FutureOr onGoBack(dynamic value) {
-    refreshInvoices();
+    invoiceCn?.value.refreshInvoices();
     setState(() {});
   }
 
   Widget buildInvoices() => ListView.builder(
-        itemCount: invoices.length,
+        itemCount: invoiceCn!.value.invoices.length,
         itemBuilder: (BuildContext context, int index) {
           return OutlinedButton(
             onPressed: () async {
               await Navigator.of(context)
                   .push(
-                    MaterialPageRoute(builder: (context) => InvoiceDetailPage(invoice: invoices[index])),
+                    MaterialPageRoute(builder: (context) => InvoiceDetailPage(invoice: invoiceCn!.value.invoices[index])),
                   )
                   .then(onGoBack);
             },
-            child: InvoiceCardWidget(
+            child: invoiceCn != null ? InvoiceCardWidget(
                 highlighted: searchByValue,
-                invoiceId: invoices[index].invoiceId!,
-                businessPartner: invoices[index].businessPartner!,
-                netAmount: invoices[index].netAmount.toString(),
-                grossAmount: invoices[index].grossAmount!,
-                vat: invoices[index].vat.toString(),
-                svgPath: "assets/pdf-svgrepo-com.svg"),
+                invoiceId: invoiceCn!.value.invoices[index].invoiceId!,
+                businessPartner: invoiceCn!.value.invoices[index].businessPartner!,
+                netAmount: invoiceCn!.value.invoices[index].netAmount.toString(),
+                grossAmount: invoiceCn!.value.invoices[index].grossAmount!,
+                vat: invoiceCn!.value.invoices[index].vat.toString(),
+                svgPath: "assets/pdf-svgrepo-com.svg") : const Center(child: CircularProgressIndicator(),),
           );
         },
       );
