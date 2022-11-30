@@ -72,7 +72,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
     if (widget.invoice != null) {
       setState(() {
         vat = widget.invoice?.vat;
-        file = PlatformFileSerializer().fromJson(widget.invoice!.file!);
+        file = const PlatformFileSerializer().fromJson(widget.invoice!.file!);
         _filePath = widget.invoice?.file!['path'];
 
         invoice = Invoice(
@@ -508,7 +508,7 @@ class AddInvoiceFormWidgetState extends State<AddInvoiceFormWidget> {
                   ),
                 )
               : invoice != null
-                  ? Center(
+                  ? const Center(
                       child: CircularProgressIndicator(),
                     )
                   : Container(),
