@@ -6,10 +6,14 @@ import 'package:invoices/db/invoice_database.dart';
 import 'package:invoices/models/invoice.dart';
 
 class InvoiceCN extends ChangeNotifier {
+  InvoiceCN() {
+    refreshInvoices();
+  }
+
   List<Invoice> invoices = [];
-  List<Invoice> invoices1 = [];
+  List<Invoice>? invoices1;
   var collection =
-      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection("invoices");
+      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection("invoices");
 
   Future<List<Invoice>> getInvoicesFromFirebase() async {
     QuerySnapshot querySnapshot = await collection.get();
@@ -17,7 +21,6 @@ class InvoiceCN extends ChangeNotifier {
     final allData = querySnapshot.docs.map((doc) => doc.data()).toList();
 
     return allData.map((e) => Invoice.fromJson(e as Map<String, dynamic>)).toList();
-
   }
 
   Future refreshInvoices() async {

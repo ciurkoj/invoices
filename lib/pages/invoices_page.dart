@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:invoices/change_notifiers/invoice_cn.dart';
@@ -24,20 +22,12 @@ class InvoicesPageState extends State<InvoicesPage> {
   String? searchByValue;
 
   TextEditingController editingController = TextEditingController();
-  // InvoiceCN? invoiceCn;
-  ValueNotifier<InvoiceCN> invoiceCn = ValueNotifier(InvoiceCN());
+  InvoiceCN? invoiceCn;
 
   @override
   void initState() {
     super.initState();
     InvoiceDatabase.init(reopen: true);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      // invoiceCn = Provider.of<InvoiceCN>(context);
-      // invoiceCn.refreshInvoices();
-      setState(() {
-
-      });
-    });
   }
 
   @override
@@ -46,63 +36,50 @@ class InvoicesPageState extends State<InvoicesPage> {
     super.dispose();
   }
 
-  // Future refreshInvoices() async {
-  //   setState(() => isLoading = true);
-  //   var connectivityResult = await (Connectivity().checkConnectivity());
-  //   //not the best, but fast to implement offline mode support
-  //   if (connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
-  //     invoices = await getInvoicesFromFirebase();
-  //     invoices1 = await getInvoicesFromFirebase();
-  //   } else {
-  //     invoices = await InvoiceDatabase.instance.readAllInvoices();
-  //     invoices1 = await InvoiceDatabase.instance.readAllInvoices();
-  //   }
-  //   setState(() => isLoading = false);
-  // }
-
   void filterSearchResults(String query) {
     List<Invoice> dummySearchList = <Invoice>[];
-    if(invoiceCn!=null){
-    dummySearchList.addAll(invoiceCn!.value.invoices);
-    if (query.isNotEmpty) {
-      List<Invoice> dummyListData = <Invoice>[];
-      dummySearchList.forEach((item) {
-        if (searchByValue == InvoiceFields.invoiceId) {
-          if (item.invoiceId!.contains(query)) {
-            dummyListData.add(item);
+    if (invoiceCn != null) {
+      dummySearchList.addAll(invoiceCn!.invoices1 ?? []);
+      if (query.isNotEmpty) {
+        List<Invoice> dummyListData = <Invoice>[];
+        dummySearchList.forEach((item) {
+          if (searchByValue == InvoiceFields.invoiceId) {
+            if (item.invoiceId!.contains(query)) {
+              dummyListData.add(item);
+            }
+          } else if (searchByValue == InvoiceFields.businessPartner) {
+            if (item.businessPartner!.contains(query)) {
+              dummyListData.add(item);
+            }
+          } else if (searchByValue == InvoiceFields.grossAmount) {
+            if (item.grossAmount!.contains(query)) {
+              dummyListData.add(item);
+            }
+          } else {
+            if (item.invoiceId!.contains(query) ||
+                item.businessPartner!.contains(query) ||
+                item.grossAmount!.contains(query)) {
+              dummyListData.add(item);
+            }
           }
-        } else if (searchByValue == InvoiceFields.businessPartner) {
-          if (item.businessPartner!.contains(query)) {
-            dummyListData.add(item);
-          }
-        } else if (searchByValue == InvoiceFields.grossAmount) {
-          if (item.grossAmount!.contains(query)) {
-            dummyListData.add(item);
-          }
-        } else {
-          if (item.invoiceId!.contains(query) ||
-              item.businessPartner!.contains(query) ||
-              item.grossAmount!.contains(query)) {
-            dummyListData.add(item);
-          }
-        }
-      });
-      setState(() {
-        invoiceCn!.value.invoices.clear();
-        invoiceCn!.value.invoices.addAll(dummyListData);
-      });
-      return;
-    } else {
-      setState(() {
-        invoiceCn!.value.invoices.clear();
-        invoiceCn!.value.invoices.addAll(invoiceCn!.value.invoices1);
-      });
-    }}
+        });
+        setState(() {
+          invoiceCn!.invoices.clear();
+          invoiceCn!.invoices.addAll(dummyListData);
+        });
+        return;
+      } else {
+        setState(() {
+          invoiceCn!.invoices.clear();
+          invoiceCn!.invoices.addAll(invoiceCn!.invoices1 ?? []);
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    invoiceCn?.value.refreshInvoices();
+    invoiceCn ??= Provider.of<InvoiceCN>(context);
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -119,23 +96,14 @@ class InvoicesPageState extends State<InvoicesPage> {
       ),
       body: Column(
         children: [
-          ValueListenableBuilder(
-              valueListenable: invoiceCn,
-              builder: (context, value, widget) {
-              return buildSearchBar();
-            }
-          ),
+          buildSearchBar(),
           Expanded(
             child: Center(
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : invoiceCn != null && invoiceCn!.value.invoices.isEmpty
-                  ? const Text(
-                'No Invoices',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              )
-                  : buildInvoices(),
-            ),
+                child: invoiceCn == null
+                    ? const CircularProgressIndicator()
+                    : invoiceCn!.invoices.isEmpty
+                        ? const Text("No invoices")
+                        : buildInvoices(invoiceCN: invoiceCn!)),
           ),
         ],
       ),
@@ -148,37 +116,42 @@ class InvoicesPageState extends State<InvoicesPage> {
             MaterialPageRoute(builder: (context) => AddInvoiceFormWidget()),
           )
               .then((value) {
-            invoiceCn?.value.refreshInvoices();
+            invoiceCn?.refreshInvoices();
             setState(() {});
           });
         },
       ),
     );
   }
+
   FutureOr onGoBack(dynamic value) {
-    invoiceCn?.value.refreshInvoices();
+    Provider.of<InvoiceCN>(context).refreshInvoices();
     setState(() {});
   }
 
-  Widget buildInvoices() => ListView.builder(
-        itemCount: invoiceCn!.value.invoices.length,
+  Widget buildInvoices({required InvoiceCN invoiceCN}) => ListView.builder(
+        itemCount: invoiceCN.invoices.length,
         itemBuilder: (BuildContext context, int index) {
           return OutlinedButton(
             onPressed: () async {
               await Navigator.of(context)
                   .push(
-                    MaterialPageRoute(builder: (context) => InvoiceDetailPage(invoice: invoiceCn!.value.invoices[index])),
+                    MaterialPageRoute(builder: (context) => InvoiceDetailPage(invoice: invoiceCN.invoices[index])),
                   )
                   .then(onGoBack);
             },
-            child: invoiceCn != null ? InvoiceCardWidget(
-                highlighted: searchByValue,
-                invoiceId: invoiceCn!.value.invoices[index].invoiceId!,
-                businessPartner: invoiceCn!.value.invoices[index].businessPartner!,
-                netAmount: invoiceCn!.value.invoices[index].netAmount.toString(),
-                grossAmount: invoiceCn!.value.invoices[index].grossAmount!,
-                vat: invoiceCn!.value.invoices[index].vat.toString(),
-                svgPath: "assets/pdf-svgrepo-com.svg") : const Center(child: CircularProgressIndicator(),),
+            child: Provider.of<InvoiceCN>(context) != null
+                ? InvoiceCardWidget(
+                    highlighted: searchByValue,
+                    invoiceId: invoiceCN.invoices[index].invoiceId!,
+                    businessPartner: invoiceCN.invoices[index].businessPartner!,
+                    netAmount: invoiceCN.invoices[index].netAmount.toString(),
+                    grossAmount: invoiceCN.invoices[index].grossAmount!,
+                    vat: invoiceCN.invoices[index].vat.toString(),
+                    svgPath: "assets/pdf-svgrepo-com.svg")
+                : const Center(
+                    child: CircularProgressIndicator(),
+                  ),
           );
         },
       );
@@ -218,7 +191,6 @@ class InvoicesPageState extends State<InvoicesPage> {
                   labelText: "Search",
                   hintText: "Search",
                   prefixIcon: const Icon(Icons.search),
-                  // border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(25.0)))
                 ),
               ),
             ),

@@ -19,36 +19,27 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      MultiProvider(
-          providers: [
-            ChangeNotifierProvider<InvoiceCN>.value(
-                value: InvoiceCN()),
-          ],
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: title,
-            themeMode: ThemeMode.dark,
-            theme: ThemeData(
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF3B5570),
-              ),
-            ),
-            home: Scaffold(
-                body: StreamBuilder<User?>(
-                    stream: FirebaseAuth.instance.authStateChanges(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return const InvoicesPage();
-                      } else {
-                        return const LoginPage();
-                      }
-                    }
-                )
-            ),
-          )
-
-      );
+  Widget build(BuildContext context) => MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: title,
+      themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF3B5570),
+        ),
+      ),
+      home: Scaffold(
+          body: StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return MultiProvider(providers: [
+                    ChangeNotifierProvider<InvoiceCN>.value(value: InvoiceCN()),
+                  ], child: const InvoicesPage());
+                } else {
+                  return const LoginPage();
+                }
+              })));
 }
 
 class MainPage extends StatelessWidget {
@@ -65,10 +56,6 @@ class MainPage extends StatelessWidget {
               } else {
                 return const LoginPage();
               }
-            }
-        )
-    );
+            }));
   }
-
-
 }
